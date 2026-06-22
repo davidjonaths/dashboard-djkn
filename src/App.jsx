@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, TrendingUp, Bell, User, LogOut,
-  ArrowUpRight, PlusCircle, PieChart as PieIcon, Lock, UserPlus, Settings, UserCheck, Users
+  ArrowUpRight, PlusCircle, PieChart as PieIcon, Lock, UserPlus, Settings, UserCheck, Users, Menu, X
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 
@@ -82,6 +82,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [sessionUser, setSessionUser] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
   
   const [databaseUsers, setDatabaseUsers] = useState(() => {
     const savedUsers = localStorage.getItem('djkn_users');
@@ -90,6 +91,36 @@ export default function App() {
       { username: 'budi', password: 'user123', name: 'Budi', role: 'pegawai', unit: 'Seksi Lelang' }
     ];
   });
+
+  // --- STATE JAM DIGITAL & WAKTU (WIB) ---
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTimeWIB = (date) => {
+    return date.toLocaleTimeString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }) + ' WIB';
+  };
+
+  const formatDateID = (date) => {
+    return date.toLocaleDateString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   useEffect(() => {
     localStorage.setItem('djkn_users', JSON.stringify(databaseUsers));
@@ -199,6 +230,7 @@ export default function App() {
     localStorage.removeItem('djkn_session');
     setIsLoggedIn(false);
     setSessionUser(null);
+    setIsMobileMenuOpen(false);
   };
 
   const handleSaveProfile = (e) => {
@@ -245,23 +277,28 @@ export default function App() {
     setNominalInput('');
   };
 
+  const navigateTo = (view) => {
+    setCurrentView(view);
+    setIsMobileMenuOpen(false);
+  };
+
   // ==================== VIEW: AUTHENTICATION ====================
   if (!isLoggedIn) {
     return (
       <div className="flex min-h-screen w-screen items-center justify-center bg-[#0b1724] font-sans relative overflow-hidden p-4">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#D4AF37]/5 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="w-full max-w-md bg-[#051622] border border-slate-800 rounded-3xl p-8 shadow-2xl z-10">
+        <div className="w-full max-w-md bg-[#051622] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10">
           <div className="text-center mb-6">
-            <div className="flex justify-center mb-5">
+            <div className="flex justify-center mb-4">
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/1/10/Logo_Kementerian_Keuangan_Republik_Indonesia.png" 
                 alt="Logo Kemenkeu" 
-                className="w-24 h-24 object-contain" 
+                className="w-20 h-20 sm:w-24 sm:h-24 object-contain" 
                 referrerPolicy="no-referrer"
               />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-wide">KANWIL DJKN SUMATERA UTARA</h1>
-            <p className="text-xs text-slate-400 mt-1">Sistem Pemantauan Internal Kepegawaian & Keuangan</p>
+            <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide">KANWIL DJKN SUMATERA UTARA</h1>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-1">Sistem Pemantauan Internal Kepegawaian & Keuangan</p>
           </div>
 
           {authError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl text-xs text-center font-medium mb-4">{authError}</div>}
@@ -286,7 +323,7 @@ export default function App() {
               <p className="text-center text-slate-400 mt-4">Sudah punya akun? <button type="button" onClick={() => setIsRegisterMode(false)} className="text-[#D4AF37] font-bold underline ml-1">Login</button></p>
             </form>
           ) : (
-            <form onSubmit={handleLogin} className="space-y-5 text-xs">
+            <form onSubmit={handleLogin} className="space-y-4 text-xs">
               <div><label className="text-slate-400 block mb-1.5">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
               <div><label className="text-slate-400 block mb-1.5">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
               <button type="submit" className="w-full bg-[#D4AF37] text-[#051622] font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 text-sm"><Lock size={16} /> Masuk</button>
@@ -299,11 +336,46 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col md:flex-row h-screen bg-slate-900 text-slate-100 overflow-hidden font-sans relative">
       
-      {/* SIDEBAR NAVIGATION */}
-      <aside className="w-64 bg-[#051622] text-white flex flex-col justify-between shadow-2xl border-r border-slate-800">
+      {/* 1. TOP BAR KHUSUS LAYAR SMARTPHONE */}
+      <header className="md:hidden flex items-center justify-between p-4 bg-[#051622] border-b border-slate-800 sticky top-0 z-40">
+        <div className="flex items-center gap-3">
+          <img 
+            src="https://upload.wikimedia.org/wikipedia/commons/1/10/Logo_Kementerian_Keuangan_Republik_Indonesia.png" 
+            alt="Logo Kemenkeu" 
+            className="w-8 h-8 object-contain" 
+            referrerPolicy="no-referrer"
+          />
+          <div>
+            <h1 className="font-extrabold text-xs text-[#D4AF37] leading-none">DJKN SUMUT</h1>
+            <p className="text-[9px] text-slate-400 mt-0.5">Sistem Monitoring</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          className="p-2 text-slate-400 hover:text-white bg-slate-800/80 rounded-xl border border-slate-700 transition"
+        >
+          {isMobileMenuOpen ? <X size={18} className="text-[#D4AF37]" /> : <Menu size={18} />}
+        </button>
+      </header>
+
+      {/* OVERLAY BACKGROUND SAAT NAVIGASI MOBILE AKTIF */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-45 md:hidden" 
+          onClick={() => setIsMobileMenuOpen(false)} 
+        />
+      )}
+
+      {/* 2. SIDEBAR NAVIGATION (DRAWER DI MOBILE, FIXED DI DESKTOP) */}
+      <aside className={`
+        fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#051622] text-white flex flex-col justify-between shadow-2xl border-r border-slate-800
+        transform transition-transform duration-300 ease-in-out md:sticky md:h-screen md:translate-x-0
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         <div>
+          {/* Header Sidebar (Hanya terlihat jelas di desktop karena di mobile sudah ada Top Bar) */}
           <div className="p-5 border-b border-slate-800 flex items-center gap-4 bg-slate-950/30">
             <img 
               src="https://upload.wikimedia.org/wikipedia/commons/1/10/Logo_Kementerian_Keuangan_Republik_Indonesia.png" 
@@ -316,141 +388,115 @@ export default function App() {
               <p className="text-[10px] text-slate-400 mt-0.5">Sistem Monitoring Internal</p>
             </div>
           </div>
-          
+
+          {/* Tombol Menu Navigasi */}
           <nav className="p-4 space-y-2">
-            <button onClick={() => setCurrentView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${currentView === 'dashboard' ? 'bg-[#D4AF37] text-[#051622]' : 'text-slate-400 hover:bg-slate-800/50'}`}><LayoutDashboard size={18} /> Dashboard Keuangan</button>
-            <button onClick={() => setCurrentView('statistik')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${currentView === 'statistik' ? 'bg-[#D4AF37] text-[#051622]' : 'text-slate-400 hover:bg-slate-800/50'}`}><Users size={18} /> Statistik Pegawai</button>
-            <button onClick={() => setCurrentView('profile')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${currentView === 'profile' ? 'bg-[#D4AF37] text-[#051622]' : 'text-slate-400 hover:bg-slate-800/50'}`}><Settings size={18} /> Pengaturan Profil</button>
+            <button 
+              onClick={() => navigateTo('dashboard')} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${currentView === 'dashboard' ? 'bg-[#D4AF37] text-[#051622]' : 'text-slate-400 hover:bg-slate-800/50'}`}
+            >
+              <LayoutDashboard size={18} /> Dashboard Keuangan
+            </button>
+            <button 
+              onClick={() => navigateTo('statistik')} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${currentView === 'statistik' ? 'bg-[#D4AF37] text-[#051622]' : 'text-slate-400 hover:bg-slate-800/50'}`}
+            >
+              <Users size={18} /> Statistik Pegawai
+            </button>
+            <button 
+              onClick={() => navigateTo('profile')} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${currentView === 'profile' ? 'bg-[#D4AF37] text-[#051622]' : 'text-slate-400 hover:bg-slate-800/50'}`}
+            >
+              <Settings size={18} /> Pengaturan Profil
+            </button>
           </nav>
         </div>
-        
+
+        {/* Keluar Button */}
         <div className="p-4 border-t border-slate-800">
-          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 text-xs font-semibold">
+          <button 
+            onClick={handleLogout} 
+            className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 text-xs font-semibold"
+          >
             <LogOut size={14} /> Keluar
           </button>
         </div>
       </aside>
 
-      {/* AREA UTAMA */}
-      <main className="flex-1 flex flex-col overflow-y-auto bg-[#0b1724]">
+      {/* 3. AREA KONTEN UTAMA */}
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         
-        {/* HEADER */}
-        <header className="bg-[#051622]/80 backdrop-blur-md border-b border-slate-800 px-8 py-5 flex items-center justify-between sticky top-0 z-10">
+        {/* JAM DIGITAL DESKTOP & INFORMASI AKUN */}
+        <div className="hidden md:flex justify-between items-center mb-6 bg-[#051622] border border-slate-800 rounded-2xl p-4 shadow-lg">
           <div>
-            <h2 className="text-2xl font-bold text-white">
-              {currentView === 'dashboard' && <>Dashboard <span className="text-[#D4AF37]">Kinerja Keuangan</span></>}
-              {currentView === 'statistik' && <>Statistik <span className="text-[#D4AF37]">Kepegawaian Rill</span></>}
-              {currentView === 'profile' && <>Pengaturan <span className="text-[#D4AF37]">Profil</span></>}
-            </h2>
+            <h2 className="text-sm font-medium text-slate-400">Selamat Datang kembali, <span className="text-[#D4AF37] font-bold">{sessionUser?.name}</span></h2>
+            <p className="text-xs text-slate-500 mt-0.5">Unit Kerja: {sessionUser?.unit} ({sessionUser?.role?.toUpperCase()})</p>
           </div>
-          <div className="flex items-center gap-3 bg-slate-800/40 border border-slate-800 px-4 py-2 rounded-2xl text-xs">
-            <div className="text-right">
-              <p className="font-bold text-slate-200">{sessionUser?.name}</p>
-              <p className="text-[10px] uppercase text-[#D4AF37] font-bold">{sessionUser?.role} • {sessionUser?.unit}</p>
-            </div>
+          <div className="text-right">
+            <div className="text-lg font-mono font-bold text-[#D4AF37] tracking-wider">{formatTimeWIB(currentTime)}</div>
+            <div className="text-[11px] text-slate-400 font-medium mt-0.5">{formatDateID(currentTime)}</div>
           </div>
-        </header>
+        </div>
 
-        {/* LOGIKA SUB VIEW */}
+        {/* JAM DIGITAL MOBILE */}
+        <div className="md:hidden bg-[#051622] border border-slate-800 rounded-xl p-3 mb-4 flex justify-between items-center shadow-md">
+          <div className="text-xs font-semibold text-slate-300">
+            {sessionUser?.name}
+          </div>
+          <div className="text-right font-mono text-xs font-bold text-[#D4AF37]">
+            {formatTimeWIB(currentTime)}
+          </div>
+        </div>
+
+        {/* VIEW: DASHBOARD KEUANGAN */}
         {currentView === 'dashboard' && (
-          <div className="p-8 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-[#051622] border border-slate-800 rounded-2xl p-6 shadow-xl"><p className="text-xs font-semibold uppercase text-slate-400">Pagu DIPA 2026</p><h3 className="text-2xl font-extrabold text-white mt-1">Rp 12,8 M</h3></div>
-              <div className="bg-[#051622] border border-slate-800 rounded-2xl p-6 shadow-xl"><p className="text-xs font-semibold uppercase text-slate-400">Total Realisasi</p><h3 className="text-2xl font-extrabold text-white mt-1">Rp 8,2 M</h3></div>
-              <div className="bg-[#051622] border border-slate-800 rounded-2xl p-6 shadow-xl"><p className="text-xs font-semibold uppercase text-slate-400">Sisa Anggaran</p><h3 className="text-2xl font-extrabold text-red-400 mt-1">Rp 4,6 M</h3></div>
-              <div className="bg-gradient-to-br from-[#051622] to-slate-800 border border-[#D4AF37]/30 rounded-2xl p-6 shadow-2xl"><p className="text-xs font-semibold uppercase text-slate-300">Capaian PNBP</p><h3 className="text-2xl font-extrabold text-[#D4AF37] mt-1">87.4%</h3></div>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <div className="text-slate-400 text-xs font-medium">Total Realisasi</div>
+                <div className="text-xl font-bold text-white mt-1">Rp 8,2 Miliar</div>
+                <div className="text-[10px] text-green-400 mt-1 flex items-center gap-1"><TrendingUp size={12}/> Target Selesai Juni</div>
+              </div>
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <div className="text-slate-400 text-xs font-medium">Jumlah Transaksi</div>
+                <div className="text-xl font-bold text-white mt-1">{transaksi.length} Berkas</div>
+                <div className="text-[10px] text-slate-400 mt-1">Tercatat di sistem lokal</div>
+              </div>
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <div className="text-slate-400 text-xs font-medium">Status Anggaran</div>
+                <div className="text-xl font-bold text-[#D4AF37] mt-1">Optimal</div>
+                <div className="text-[10px] text-slate-400 mt-1">Sesuai dengan pagu DIPA</div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className={`bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl ${sessionUser?.role !== 'admin' ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
-                <h4 className="font-bold text-base text-white mb-4 flex items-center gap-2"><TrendingUp size={16} className="text-[#D4AF37]" /> Tren Kumulatif Penyerapan Anggaran</h4>
-                <div className="w-full h-64">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 tracking-wider uppercase">Tren Realisasi Anggaran (Jutaan Rp)</h3>
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={dataTren}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                      <XAxis dataKey="bulan" stroke="#64748b" fontSize={11} />
-                      <YAxis stroke="#64748b" fontSize={11} />
-                      <Tooltip contentStyle={{ backgroundColor: '#051622', borderColor: '#334155', color: '#fff' }} />
-                      <Area type="monotone" dataKey="Realisasi" stroke="#D4AF37" strokeWidth={3} fill="#D4AF37" fillOpacity={0.05} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="bulan" stroke="#94a3b8" fontSize={11} />
+                      <YAxis stroke="#94a3b8" fontSize={11} />
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff' }} />
+                      <Area type="monotone" dataKey="Realisasi" stroke="#D4AF37" fillOpacity={0.1} fill="#D4AF37" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {sessionUser?.role === 'admin' && (
-                <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl">
-                  <h4 className="font-bold text-base text-white mb-4">Input Keuangan Kantor</h4>
-                  <form onSubmit={handleTambahTransaksi} className="space-y-4 text-xs">
-                    <input type="text" value={uraianInput} onChange={(e) => setUraianInput(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none" placeholder="Uraian Kegiatan..." required />
-                    <div className="grid grid-cols-2 gap-3">
-                      <select value={bidangInput} onChange={(e) => setBidangInput(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-300"><option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option></select>
-                      <select value={tipeInput} onChange={(e) => setTipeInput(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-300"><option value="keluar">Pengeluaran</option><option value="masuk">PNBP</option></select>
-                    </div>
-                    <input type="number" value={nominalInput} onChange={(e) => setNominalInput(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:outline-none" placeholder="Nominal (Rp)..." required />
-                    <button type="submit" className="w-full bg-[#D4AF37] text-[#051622] font-bold rounded-xl py-3 flex items-center justify-center gap-2"><PlusCircle size={16} /> Simpan Data Anggaran</button>
-                  </form>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {currentView === 'statistik' && (
-          <div className="p-8 space-y-8 animate-fadeIn">
-            
-            {/* CARD KPI TOTAL RINGKAS */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-[#051622] border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <p className="text-xs font-semibold uppercase text-slate-400">Total Pegawai Aktif</p>
-                <h3 className="text-3xl font-extrabold text-[#D4AF37] mt-1">51 Pegawai</h3>
-              </div>
-              <div className="bg-[#051622] border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <p className="text-xs font-semibold uppercase text-slate-400">Pegawai Laki-Laki</p>
-                <h3 className="text-2xl font-bold text-blue-400 mt-1">26 Orang</h3>
-              </div>
-              <div className="bg-[#051622] border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <p className="text-xs font-semibold uppercase text-slate-400">Pegawai Perempuan</p>
-                <h3 className="text-2xl font-bold text-amber-400 mt-1">25 Orang</h3>
-              </div>
-              <div className="bg-[#051622] border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <p className="text-xs font-semibold uppercase text-slate-400">Pendidikan S1/S2</p>
-                <h3 className="text-2xl font-bold text-emerald-400 mt-1">40 Orang</h3>
-              </div>
-            </div>
-
-            {/* BAR CHART SEBARAN UNIT KERJA */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl lg:col-span-1">
-                <h4 className="font-bold text-base text-white mb-3">Tabel Unit Kerja</h4>
-                <div className="overflow-x-auto text-xs">
-                  <table className="w-full text-left">
-                    <thead className="bg-[#0b1724] text-slate-400 uppercase tracking-wider font-semibold">
-                      <tr><th className="px-3 py-2">Unit Kerja</th><th className="px-3 py-2 text-right">Jumlah</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800 text-slate-300">
-                      {dataStatistikUnit.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-slate-800/20">
-                          <td className="px-3 py-2 font-medium">{item.unit}</td>
-                          <td className="px-3 py-2 text-right font-bold text-[#D4AF37]">{item.jumlah}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl lg:col-span-2">
-                <h4 className="font-bold text-base text-white mb-4">Grafik Distribusi Pegawai Per Bidang/Unit</h4>
-                <div className="w-full h-64">
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 tracking-wider uppercase">Alokasi Per Bidang (Miliar Rp)</h3>
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dataStatistikUnit} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                      <XAxis dataKey="unit" stroke="#64748b" fontSize={10} angle={-15} textAnchor="end" height={50} />
-                      <YAxis stroke="#64748b" fontSize={11} allowDecimals={false} />
-                      <Tooltip contentStyle={{ backgroundColor: '#051622', borderColor: '#334155', color: '#fff' }} />
-                      <Bar dataKey="jumlah" fill="#1E3A8A" radius={[4, 4, 0, 0]}>
-                        {dataStatistikUnit.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#D4AF37' : '#1E3A8A'} />
+                    <BarChart data={dataBidang}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                      <YAxis stroke="#94a3b8" fontSize={11} />
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff' }} />
+                      <Bar dataKey="Rp" fill="#1E3A8A">
+                        {dataBidang.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index === 0 ? '#D4AF37' : '#1E3A8A'} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -459,154 +505,227 @@ export default function App() {
               </div>
             </div>
 
-            {/* DEMOGRAFI GENDER, TINGKAT JABATAN, PENDIDIKAN */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* Jenis Kelamin */}
-              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
-                <h4 className="font-bold text-base text-white mb-2">Komposisi Gender</h4>
-                <div className="flex flex-col items-center justify-center py-2">
-                  <div className="w-32 h-32 mb-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={dataStatistikGender} innerRadius={45} outerRadius={60} paddingAngle={4} dataKey="value">
-                          {dataStatistikGender.map((entry, index) => <Cell key={`cell-${index}`} fill={GENDER_COLORS[index]} />)}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="w-full space-y-2 text-xs">
-                    {dataStatistikGender.map((entry, index) => (
-                      <div key={entry.name} className="flex items-center justify-between bg-slate-900/50 p-2 rounded-lg border border-slate-800">
-                        <span className="text-slate-400">{entry.name}</span>
-                        <span className="font-bold text-white">{entry.value} Orang ({((entry.value/51)*100).toFixed(1)}%)</span>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {sessionUser?.role === 'admin' && (
+                <div className="bg-[#051622] border border-slate-800 p-5 rounded-2xl shadow-md h-fit">
+                  <h3 className="text-xs font-bold text-slate-300 mb-4 flex items-center gap-2"><PlusCircle size={16} className="text-[#D4AF37]" /> TAMBAH TRANSAKSI BARU</h3>
+                  <form onSubmit={handleTambahTransaksi} className="space-y-4 text-xs">
+                    <div>
+                      <label className="text-slate-400 block mb-1">Uraian Transaksi</label>
+                      <input type="text" value={uraianInput} onChange={(e) => setUraianInput(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#D4AF37]" placeholder="Contoh: Pembelian ATK Kantor" required />
+                    </div>
+                    <div>
+                      <label className="text-slate-400 block mb-1">Nominal Anggaran (Rp)</label>
+                      <input type="number" value={nominalInput} onChange={(e) => setNominalInput(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#D4AF37]" placeholder="Contoh: 5000000" required />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-slate-400 block mb-1">Bidang / Unit</label>
+                        <select value={bidangInput} onChange={(e) => setBidangInput(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-300">
+                          <option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option>
+                        </select>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Tingkat Eselon */}
-              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
-                <div>
-                  <h4 className="font-bold text-base text-white mb-1">Sebaran Eselon / Tingkat Jabatan</h4>
-                  <p className="text-xs text-slate-400 mb-4">Struktural & Pelaksana</p>
-                </div>
-                <div className="space-y-3 text-xs">
-                  {dataStatistikJabatan.map((item, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between text-slate-300 font-medium">
-                        <span>{item.name}</span>
-                        <span className="font-bold text-[#D4AF37]">{item.jumlah}</span>
-                      </div>
-                      <div className="w-full bg-slate-800 rounded-full h-2">
-                        <div className="bg-[#D4AF37] h-2 rounded-full" style={{ width: `${(item.jumlah / 51) * 100}%` }}></div>
+                      <div>
+                        <label className="text-slate-400 block mb-1">Jenis Arus</label>
+                        <select value={tipeInput} onChange={(e) => setTipeInput(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-300">
+                          <option value="keluar">Pengeluaran</option><option value="masuk">Pemasukan</option>
+                        </select>
                       </div>
                     </div>
-                  ))}
+                    <button type="submit" className="w-full bg-[#D4AF37] hover:bg-[#bda032] text-[#051622] font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+                      <PlusCircle size={14}/> Simpan Anggaran
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              <div className={`bg-[#051622] border border-slate-800 p-5 rounded-2xl shadow-md ${sessionUser?.role === 'admin' ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
+                <h3 className="text-xs font-bold text-slate-300 mb-4 tracking-wider uppercase">Log Mutasi Anggaran Terkini</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400">
+                        <th className="py-2.5 font-semibold">Tanggal</th>
+                        <th className="py-2.5 font-semibold">Uraian</th>
+                        <th className="py-2.5 font-semibold">Bidang</th>
+                        <th className="py-2.5 font-semibold text-right">Jumlah (Rp)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40">
+                      {transaksi.map((t) => (
+                        <tr key={t.id} className="hover:bg-slate-800/20 text-slate-300">
+                          <td className="py-3 whitespace-nowrap">{t.date}</td>
+                          <td className="py-3 max-w-xs truncate">{t.uraian}</td>
+                          <td className="py-3"><span className="px-2 py-0.5 rounded-md bg-slate-800 text-[10px] border border-slate-700 font-medium">{t.bidang}</span></td>
+                          <td className={`py-3 text-right font-semibold ${t.tipe === 'masuk' ? 'text-green-400' : 'text-red-400'}`}>
+                            {t.tipe === 'masuk' ? '+' : '-'} {t.jumlah.toLocaleString('id-ID')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Jenjang Pendidikan */}
-              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
-                <div>
-                  <h4 className="font-bold text-base text-white mb-1">Kualifikasi Pendidikan</h4>
-                  <p className="text-xs text-slate-400 mb-2">Tingkat akademik terakhir</p>
-                </div>
-                <div className="w-full h-44">
+        {/* VIEW: STATISTIK PEGAWAI */}
+        {currentView === 'statistik' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Sebaran Pegawai per Unit Kerja</h3>
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart layout="vertical" data={dataStatistikPendidikan} margin={{ top: 5, right: 10, left: 15, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1e293b" />
-                      <XAxis type="number" stroke="#64748b" fontSize={10} allowDecimals={false} />
-                      <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={10} width={80} />
-                      <Tooltip contentStyle={{ backgroundColor: '#051622', borderColor: '#334155' }} />
+                    <BarChart data={dataStatistikUnit} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis type="number" stroke="#94a3b8" fontSize={11} />
+                      <YAxis dataKey="unit" type="category" stroke="#94a3b8" fontSize={11} width={100} />
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} />
                       <Bar dataKey="jumlah" fill="#D4AF37" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-            </div>
 
-            {/* SEKSI BARU: KARAKTERISTIK GENERASI, GOLONGAN DARAH & AGAMA */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* Demografi Generasi */}
-              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl">
-                <h4 className="font-bold text-base text-white mb-3">Distribusi Generasi Umur</h4>
-                <div className="space-y-3 text-xs">
-                  {dataStatistikGenerasi.map((item, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between text-slate-300">
-                        <span>{item.name}</span>
-                        <span className="font-bold text-blue-400">{item.jumlah} Pegawai</span>
-                      </div>
-                      <div className="w-full bg-slate-800 rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(item.jumlah / 51) * 100}%` }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Golongan Darah */}
-              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl">
-                <h4 className="font-bold text-base text-white mb-2">Sebaran Golongan Darah</h4>
-                <div className="flex items-center justify-around h-36">
-                  <div className="w-24 h-24">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={dataStatistikGoldar} innerRadius={25} outerRadius={40} paddingAngle={3} dataKey="value">
-                          {dataStatistikGoldar.map((entry, index) => <Cell key={`cell-${index}`} fill={GOLDAR_COLORS[index]} />)}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="space-y-1 text-xs">
-                    {dataStatistikGoldar.map((entry, index) => (
-                      <div key={entry.name} className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: GOLDAR_COLORS[index] }}></div>
-                        <span className="text-slate-400">{entry.name}: <strong>{entry.value}</strong></span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Agama */}
-              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl shadow-xl">
-                <h4 className="font-bold text-base text-white mb-4">Profil Keragaman Agama</h4>
-                <div className="w-full h-32">
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Profil Berdasarkan Generasi</h3>
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dataStatistikAgama}>
-                      <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
-                      <YAxis stroke="#64748b" fontSize={11} allowDecimals={false} />
-                      <Tooltip contentStyle={{ backgroundColor: '#051622', borderColor: '#334155' }} />
-                      <Bar dataKey="jumlah" fill="#10B981" radius={[4, 4, 0, 0]} />
+                    <BarChart data={dataStatistikGenerasi}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} />
+                      <YAxis stroke="#94a3b8" fontSize={11} />
+                      <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} />
+                      <Bar dataKey="jumlah" fill="#1E3A8A" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Proporsi Gender Pegawai</h3>
+                <div className="h-64 flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <div className="w-full h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={dataStatistikGender} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={4} dataKey="value">
+                          {dataStatistikGender.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend verticalAlign="bottom" height={36} iconSize={10} style={{ fontSize: '11px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-[#051622] border border-slate-800 p-4 rounded-2xl shadow-md">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Sebaran Golongan Darah</h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={dataStatistikGoldar} cx="50%" cy="50%" outerRadius={70} dataKey="value">
+                        {dataStatistikGoldar.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={GOLDAR_COLORS[index % GOLDAR_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36} iconSize={10} style={{ fontSize: '11px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-[#051622] border border-slate-800 p-5 rounded-2xl shadow-md">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Tingkat Pendidikan Terakhir</h3>
+                <div className="space-y-3 text-xs">
+                  {dataStatistikPendidikan.map((p, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-2.5 border border-slate-800/60 rounded-xl">
+                      <span className="text-slate-300 font-medium">{p.name}</span>
+                      <span className="font-bold text-[#D4AF37]">{p.jumlah} Pegawai</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-[#051622] border border-slate-800 p-5 rounded-2xl shadow-md">
+                <h3 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider">Struktur Eselonering / Jabatan</h3>
+                <div className="space-y-3 text-xs">
+                  {dataStatistikJabatan.map((j, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-slate-900/50 p-2.5 border border-slate-800/60 rounded-xl">
+                      <span className="text-slate-300 font-medium">{j.name}</span>
+                      <span className="font-bold text-blue-400">{j.jumlah} Orang</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
 
+        {/* VIEW: PENGATURAN PROFIL */}
         {currentView === 'profile' && (
-          <div className="p-8 max-w-2xl mx-auto w-full">
-            <div className="bg-[#051622] border border-slate-800 rounded-3xl p-8 shadow-xl">
+          <div className="p-4 max-w-2xl mx-auto w-full">
+            <div className="bg-[#051622] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
               <div className="flex items-center gap-3 mb-6 border-b border-slate-800 pb-4">
                 <Settings className="text-[#D4AF37]" size={24} />
-                <h3 className="text-lg font-bold text-white">Manajemen Profil Kredensial</h3>
+                <h3 className="text-base sm:text-lg font-bold text-white">Manajemen Profil Kredensial</h3>
               </div>
+              {profileSuccess && (
+                <div className="bg-green-500/10 border border-green-500/30 text-green-400 p-3 rounded-xl text-xs text-center font-medium mb-4">
+                  {profileSuccess}
+                </div>
+              )}
+              
               <form onSubmit={handleSaveProfile} className="space-y-5 text-xs">
-                <div><label className="text-slate-400 block mb-1">Nama Lengkap</label><input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
-                <div><label className="text-slate-400 block mb-1">Ubah Password</label><input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
-                <button type="submit" className="bg-[#D4AF37] text-[#051622] font-bold px-6 py-3 rounded-xl transition">Simpan Profil</button>
+                <div>
+                  <label className="text-slate-400 block mb-1">Nama Lengkap</label>
+                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37]" required />
+                </div>
+                <div>
+                  <label className="text-slate-400 block mb-1">Ubah Password</label>
+                  <input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37]" required />
+                </div>
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-2">Asal Bagian / Unit Kerja</label>
+                  <select 
+                    value={editUnit} 
+                    onChange={(e) => setEditUnit(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-[#D4AF37] text-sm"
+                  >
+                    <option>Bagian Umum</option>
+                    <option>PKN</option>
+                    <option>Lelang</option>
+                    <option>KIHI</option>
+                  </select>
+                </div>
+
+                <div className="pt-4 border-t border-slate-800/60 flex items-center justify-end gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => setCurrentView('dashboard')}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-5 py-3 rounded-xl transition"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="bg-[#D4AF37] hover:bg-[#AA8811] text-[#051622] font-bold px-6 py-3 rounded-xl flex items-center gap-2 transition shadow-lg shadow-[#D4AF37]/5 text-xs"
+                  >
+                    <UserCheck size={16} /> Simpan Perubahan Profil
+                  </button>
+                </div>
               </form>
             </div>
           </div>
         )}
+
       </main>
     </div>
   );
