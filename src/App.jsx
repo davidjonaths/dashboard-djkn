@@ -298,7 +298,7 @@ export default function App() {
               />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">SIPKA</h1>
-            <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-[0.2em] mt-1">Sistem Informasi Pemantauan Kepegawaian & Keuangan</p>
+            <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-[0.2em] mt-1">Sistem Informasi Pemantauan Kepegawaian & Keuangan Kantor Wilayah DJKN Sumut</p>
           </div>
 
           {authError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl text-xs text-center font-medium mb-4">{authError}</div>}
@@ -460,7 +460,7 @@ export default function App() {
               <img src="/logo-sipka.png" alt="SIPKA Logo" className="h-36 sm:h-44 w-auto mx-auto drop-shadow-[0_0_30px_rgba(212,175,55,0.25)]" />
               <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter">SIPKA</h1>
               <div className="inline-block bg-[#D4AF37]/10 border border-[#D4AF37]/30 px-4 py-1.5 rounded-full">
-                <p className="text-xs sm:text-sm text-[#D4AF37] font-black uppercase tracking-[0.25em]">Sistem Informasi Pemantauan Kepegawaian & Keuangan</p>
+                <p className="text-xs sm:text-sm text-[#D4AF37] font-black uppercase tracking-[0.25em]">Sistem Informasi Pemantauan Kepegawaian & Keuangan Kantor Wilayah DJKN Sumut</p>
               </div>
               <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
                 SIPKA dirancang sebagai platform analitik internal komprehensif guna melakukan pemantauan, pengelolaan akuntabel, serta pengendalian penuh terhadap aspek kepegawaian dan realisasi anggaran DIPA Kanwil.
