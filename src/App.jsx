@@ -234,6 +234,11 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
+  const navigateTo = (view) => {
+    setCurrentView(view);
+    setIsMobileMenuOpen(false);
+  };
+
   const handleSaveProfile = (e) => {
     e.preventDefault();
     setProfileSuccess('');
@@ -276,11 +281,6 @@ export default function App() {
     setTransaksi([transaksiBaru, ...transaksi]);
     setUraianInput('');
     setNominalInput('');
-  };
-
-  const navigateTo = (view) => {
-    setCurrentView(view);
-    setIsMobileMenuOpen(false);
   };
 
   // ==================== VIEW: AUTHENTICATION ====================
@@ -452,93 +452,128 @@ export default function App() {
           </div>
         </div>
 
-        {/* ==================== VIEW: HOMEPAGE (FILOSOFI BARU) ==================== */}
+        {/* ==================== VIEW: HOMEPAGE (FILOSOFI MENARIK SESUAI CONTOH) ==================== */}
         {currentView === 'homepage' && (
-          <div className="max-w-5xl mx-auto space-y-12 pb-12 animate-fadeIn">
-            {/* HERO HERO COMPONENT */}
-            <div className="text-center space-y-4">
-              <img src="/SIPKA-logo.png" alt="SIPKA Logo" className="h-36 sm:h-44 w-auto mx-auto drop-shadow-[0_0_30px_rgba(212,175,55,0.25)]" />
-              <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter">SIPKA</h1>
-              <div className="inline-block bg-[#D4AF37]/10 border border-[#D4AF37]/30 px-4 py-1.5 rounded-full">
-                <p className="text-xs sm:text-sm text-[#D4AF37] font-black uppercase tracking-[0.25em]">Sistem Informasi Pemantauan Kepegawaian & Keuangan</p>
+          <div className="max-w-6xl mx-auto space-y-12 pb-12 animate-fadeIn">
+            {/* HERO TITLE HEADER */}
+            <div className="text-center space-y-3">
+              <div className="inline-block bg-[#D4AF37]/10 border border-[#D4AF37]/20 px-4 py-1 rounded-full">
+                <span className="text-[11px] text-[#D4AF37] font-extrabold uppercase tracking-[0.3em]">Profil Aplikasi Internal</span>
               </div>
-              <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-                SIPKA dirancang sebagai platform analitik internal komprehensif guna melakukan pemantauan, pengelolaan akuntabel, serta pengendalian penuh terhadap aspek kepegawaian dan realisasi anggaran DIPA Kanwil.
+              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">BRANDING & FILOSOFI</h1>
+              <p className="text-slate-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+                Instrumen transformasi digital pendayagunaan aparatur sipil negara dan pengelolaan anggaran DIPA secara transparan.
               </p>
             </div>
 
-            {/* CARD FILOSOFI UTAMA */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#051622] border border-slate-800 p-8 rounded-3xl text-center space-y-3 group hover:border-[#D4AF37]/40 transition">
-                <div className="w-14 h-14 bg-blue-600/15 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition"><Target size={28}/></div>
-                <h3 className="font-black text-lg tracking-wide text-white">PANTAU</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">Penyajian akurasi data kepegawaian dan log transaksi secara riil melalui visualisasi dasbor yang intuitif.</p>
-              </div>
-              <div className="bg-[#051622] border border-slate-800 p-8 rounded-3xl text-center space-y-3 group hover:border-[#D4AF37]/40 transition">
-                <div className="w-14 h-14 bg-[#D4AF37]/15 text-[#D4AF37] rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition"><Settings size={28}/></div>
-                <h3 className="font-black text-lg tracking-wide text-white">KELOLA</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">Efisiensi administrasi internal dalam pencatatan anggaran per bidang, mutasi dana, serta pemutakhiran profile.</p>
-              </div>
-              <div className="bg-[#051622] border border-slate-800 p-8 rounded-3xl text-center space-y-3 group hover:border-[#D4AF37]/40 transition">
-                <div className="w-14 h-14 bg-emerald-600/15 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition"><Shield size={28}/></div>
-                <h3 className="font-black text-lg tracking-wide text-white">KENDALIKAN</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">Penguatan akuntabilitas pengawasan internal demi memitigasi risiko defisit anggaran dan overhead organisasi.</p>
-              </div>
-            </div>
-
-            {/* BEDAH FILOSOFI LOGO SIPKA */}
-            <div className="bg-[#051622] border border-slate-800 rounded-[2rem] p-6 sm:p-10">
-              <h2 className="text-xl font-black mb-8 flex items-center gap-3 text-white"><Info className="text-[#D4AF37]" size={22}/> Anatomi & Arti Logo SIPKA</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div className="space-y-1.5">
-                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Perisai Luar (Integritas)</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Melambangkan benteng proteksi, kepatuhan internal terhadap regulasi, serta komitmen penuh dalam menjaga keamanan kerahasiaan data.</p>
-                </div>
-                <div className="space-y-1.5">
-                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Tiga Figur Manusia Sinergis</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Merepresentasikan aset utama organisasi (SDM) yang berkolaborasi harmonis antar bidang demi kemajuan Kanwil Sumatera Utara.</p>
-                </div>
-                <div className="space-y-1.5">
-                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Grafik Batang Integral</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Mewakili kinerja keuangan berkelanjutan, pengalokasian DIPA yang presisi, serta penyajian data statistik yang transparan.</p>
-                </div>
-                <div className="space-y-1.5">
-                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Lensa Kaca Pembesar</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Mencerminkan ketelitian, fungsi pengawasan internal (monitoring), serta evaluasi menyeluruh tanpa ada data yang luput.</p>
-                </div>
-                <div className="space-y-1.5">
-                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Panah Akselerasi ke Atas</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Melambangkan pertumbuhan eksponensial efisiensi kerja, peningkatan kualitas layanan publik, dan visi modern masa depan.</p>
-                </div>
-                <div className="space-y-1.5">
-                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Palet Warna Biru & Emas</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">Biru tua melambangkan profesionalisme kedinasan yang kokoh & tepercaya. Emas melambangkan standar kualitas prima dan kesuksesan.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* VISI & MANFAAT */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-5 flex flex-col justify-center">
-                <h2 className="text-xl font-black text-white">Manfaat Operasional</h2>
-                <ul className="space-y-3.5">
-                  {[
-                    "Konsolidasi data kepegawaian makro dan mikro terpusat",
-                    "Pemberantasan disparitas laporan anggaran dengan pencatatan digital real-time",
-                    "Kemudahan akses pemantauan grafik untuk menunjang decision making eksekutif",
-                    "Sistem otentikasi aman berbasis klasifikasi hak akses Admin dan Pegawai"
-                  ].map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-3 text-xs text-slate-300 leading-relaxed">
-                      <CheckCircle size={16} className="text-[#D4AF37] shrink-0 mt-0.5" /> {benefit}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="bg-gradient-to-br from-[#D4AF37]/10 to-transparent border border-[#D4AF37]/20 rounded-2xl p-6 sm:p-8 flex flex-col justify-center">
-                <h3 className="font-bold text-base text-[#D4AF37] mb-2">Pernyataan Tujuan</h3>
-                <p className="text-xs leading-relaxed text-slate-300 italic">
-                  "Menjadikan SIPKA sebagai roda penggerak digitalisasi internal Kanwil Sumut yang andal, akurat, dan adaptif guna mempermudah pengawasan aset berharga aparatur sipil negara sekaligus pendayagunaan anggaran secara optimal."
+            {/* STRUKTUR UTAMA FILOSOFI (IDEAL BERDASARKAN GAMBAR TEMPLATE) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start bg-[#051622] border border-slate-800/80 rounded-[2rem] p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-[-20%] left-[-10%] w-72 h-72 bg-[#D4AF37]/5 rounded-full blur-[80px] pointer-events-none"></div>
+              
+              {/* KOLOM KIRI: TAMPILAN PRESTIGE LOGO BESAR */}
+              <div className="lg:col-span-5 flex flex-col items-center justify-center text-center p-6 bg-slate-950/40 border border-slate-800/60 rounded-2xl sticky top-6">
+                <img 
+                  src="/SIPKA-logo.png" 
+                  alt="SIPKA Logo" 
+                  className="h-44 sm:h-56 w-auto object-contain drop-shadow-[0_0_35px_rgba(212,175,55,0.25)] animate-pulse" 
+                />
+                <h2 className="text-3xl font-black text-white tracking-tight mt-6">SIPKA</h2>
+                <div className="h-0.5 w-12 bg-[#D4AF37] my-3 rounded-full"></div>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed px-4">
+                  Sistem Informasi Pemantauan Kepegawaian & Keuangan
                 </p>
+              </div>
+
+              {/* KOLOM KANAN: DAFTAR DETAIL FILOSOFI BERBARIS DENGAN ASSET MICRO-IMAGE */}
+              <div className="lg:col-span-7 space-y-4">
+                <h3 className="text-xs font-black text-[#D4AF37] tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
+                  <Info size={14}/> Bedah Anatomi Komponen Logo
+                </h3>
+                
+                {/* LIST ITEM 1: PERISAI */}
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-900/40 border border-slate-800/40 hover:border-[#D4AF37]/30 transition group">
+                  <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl shrink-0 group-hover:bg-[#D4AF37]/10 transition">
+                    <img src="/perisai.png" alt="Perisai" className="h-8 w-8 object-contain" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-200 tracking-wide group-hover:text-[#D4AF37] transition">Perisai Luar (Integritas)</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-0.5">Melambangkan benteng proteksi sistem pengawasan, kepatuhan terhadap hukum, serta komitmen penuh menjaga kerahasiaan data.</p>
+                  </div>
+                </div>
+
+                {/* LIST ITEM 2: TIGA MANUSIA */}
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-900/40 border border-slate-800/40 hover:border-[#D4AF37]/30 transition group">
+                  <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl shrink-0 group-hover:bg-[#D4AF37]/10 transition">
+                    <img src="/tiga-manusia.png" alt="Tiga Manusia" className="h-8 w-8 object-contain" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-200 tracking-wide group-hover:text-[#D4AF37] transition">Tiga Figur Manusia Sinergis</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-0.5">Merepresentasikan Sumber Daya Manusia (SDM) sebagai pilar utama organisasi yang berkolaborasi harmonis antar-seksi.</p>
+                  </div>
+                </div>
+
+                {/* LIST ITEM 3: GRAFIK */}
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-900/40 border border-slate-800/40 hover:border-[#D4AF37]/30 transition group">
+                  <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl shrink-0 group-hover:bg-[#D4AF37]/10 transition">
+                    <img src="/grafik.png" alt="Grafik Batang" className="h-8 w-8 object-contain" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-200 tracking-wide group-hover:text-[#D4AF37] transition">Grafik Batang Akuntabel</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-0.5">Mewakili visualisasi data realisasi keuangan DIPA yang akurat, transparan, serta performa kinerja berkala yang terukur.</p>
+                  </div>
+                </div>
+
+                {/* LIST ITEM 4: KACA PEMBESAR */}
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-900/40 border border-slate-800/40 hover:border-[#D4AF37]/30 transition group">
+                  <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl shrink-0 group-hover:bg-[#D4AF37]/10 transition">
+                    <img src="/kaca-pembesar.png" alt="Kaca Pembesar" className="h-8 w-8 object-contain" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-200 tracking-wide group-hover:text-[#D4AF37] transition">Lensa Kaca Pembesar (Monitoring)</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-0.5">Mencerminkan fungsi pemantauan yang tajam, ketelitian, serta ketepatan evaluasi internal terhadap data makro organisasi.</p>
+                  </div>
+                </div>
+
+                {/* LIST ITEM 5: PANAH */}
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-900/40 border border-slate-800/40 hover:border-[#D4AF37]/30 transition group">
+                  <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl shrink-0 group-hover:bg-[#D4AF37]/10 transition">
+                    <img src="/panah.png" alt="Panah Ke Atas" className="h-8 w-8 object-contain" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-200 tracking-wide group-hover:text-[#D4AF37] transition">Panah Akselerasi Ke Atas</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-0.5">Melambangkan pertumbuhan produktivitas efisiensi kerja, akselerasi pelayanan publik, serta arah pandang ke masa depan.</p>
+                  </div>
+                </div>
+
+                {/* LIST ITEM 6: WARNA */}
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-900/40 border border-slate-800/40 hover:border-[#D4AF37]/30 transition group">
+                  <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl shrink-0 group-hover:bg-[#D4AF37]/10 transition">
+                    <img src="/warna.png" alt="Warna Filosofi" className="h-8 w-8 object-contain" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-200 tracking-wide group-hover:text-[#D4AF37] transition">Kombinasi Biru & Emas Corporate</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-0.5">Warna Biru melambangkan profesionalisme kedinasan dan kepercayaan publik. Warna Emas melambangkan kemewahan mutu pelayanan tinggi.</p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* CORE FUNCTION VALUE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl flex flex-col justify-center space-y-4">
+                <h3 className="text-base font-black text-white flex items-center gap-2"><Target size={18} className="text-[#D4AF37]"/> Pernyataan Visi Sistem</h3>
+                <p className="text-xs text-slate-300 italic leading-relaxed">
+                  "Menjadikan SIPKA sarana integrasi digital penunjang keputusan eksekutif yang adaptif dalam memonitoring kapabilitas aparatur sipil negara sekaligus optimalisasi realisasi DIPA secara presisi."
+                </p>
+              </div>
+              <div className="bg-[#051622] border border-slate-800 p-6 rounded-2xl space-y-3">
+                <h3 className="text-base font-black text-white">Output Manfaat Operasional</h3>
+                <ul className="space-y-2 text-xs text-slate-300">
+                  <li className="flex items-center gap-2"><CheckCircle size={14} className="text-[#D4AF37]"/> Reduksi kesalahan kalkulasi rekap log mutasi manual</li>
+                  <li className="flex items-center gap-2"><CheckCircle size={14} className="text-[#D4AF37]"/> Transparansi visualisasi grafik komparasi per bidang</li>
+                  <li className="flex items-center gap-2"><CheckCircle size={14} className="text-[#D4AF37]"/> Fleksibilitas pemantauan jam kerja terpusat via smartphone</li>
+                </ul>
               </div>
             </div>
           </div>
