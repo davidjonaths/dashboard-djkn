@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, TrendingUp, Bell, User, LogOut,
-  ArrowUpRight, PlusCircle, PieChart as PieIcon, Lock, UserPlus, Settings, UserCheck, Users, Menu, X
+  LayoutDashboard, TrendingUp, Bell, User, LogOut, Home,
+  ArrowUpRight, PlusCircle, PieChart as PieIcon, Lock, UserPlus, Settings, UserCheck, Users, Menu, X,
+  Shield, CheckCircle, Target, Info
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 
@@ -21,7 +22,7 @@ const dataProporsi = [
 ];
 const COLORS = ['#D4AF37', '#1E3A8A', '#0F172A', '#94A3B8'];
 
-// ==================== [2] INTEGRASI DATA UTUH REAL EXCEL KANWIL DJKN SUMUT ====================
+// ==================== [2] DATA UTUH REAL KANWIL SUMUT ====================
 const dataStatistikUnit = [
   { unit: 'Kakanwil', jumlah: 1 },
   { unit: 'Bagian Umum', jumlah: 10 },
@@ -78,7 +79,7 @@ const GENERAL_COLORS = ['#D4AF37', '#1E3A8A', '#475569', '#64748b', '#94A3B8', '
 
 export default function App() {
   // --- STATE NAVIGATION & AUTHENTICATION ---
-  const [currentView, setCurrentView] = useState('dashboard'); 
+  const [currentView, setCurrentView] = useState('homepage'); // Set default ke halaman filosofi baru
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [sessionUser, setSessionUser] = useState(null);
@@ -218,7 +219,7 @@ export default function App() {
       localStorage.setItem('djkn_session', JSON.stringify(userDitemukan));
       setSessionUser(userDitemukan);
       setIsLoggedIn(true);
-      setCurrentView('dashboard');
+      setCurrentView('homepage'); // Redirect langsung ke Beranda Filosofi
       setAuthUsername('');
       setAuthPassword('');
     } else {
@@ -291,13 +292,13 @@ export default function App() {
           <div className="text-center mb-6">
             <div className="flex justify-center mb-4">
               <img 
-                src="/logo-djkn.png" 
-                alt="Logo DJKN" 
-                className="h-16 w-auto object-contain mx-auto" 
+                src="/logo-sipka.png" 
+                alt="Logo SIPKA" 
+                className="h-20 w-auto object-contain mx-auto drop-shadow-[0_0_15px_rgba(212,175,55,0.15)]" 
               />
             </div>
-            <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide">KANWIL DJKN SUMATERA UTARA</h1>
-            <p className="text-[11px] sm:text-xs text-slate-400 mt-1">Sistem Pemantauan Internal Kepegawaian & Keuangan</p>
+            <h1 className="text-2xl font-black text-white tracking-tight">SIPKA</h1>
+            <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-[0.2em] mt-1">Sistem Informasi Pemantauan Kepegawaian & Keuangan</p>
           </div>
 
           {authError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl text-xs text-center font-medium mb-4">{authError}</div>}
@@ -305,27 +306,27 @@ export default function App() {
 
           {isRegisterMode ? (
             <form onSubmit={handleRegister} className="space-y-4 text-xs">
-              <div><label className="text-slate-400 block mb-1">Nama Lengkap</label><input type="text" value={authName} onChange={(e) => setAuthName(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
-              <div><label className="text-slate-400 block mb-1">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
-              <div><label className="text-slate-400 block mb-1">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
+              <div><label className="text-slate-400 block mb-1">Nama Lengkap</label><input type="text" value={authName} onChange={(e) => setAuthName(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37]" required /></div>
+              <div><label className="text-slate-400 block mb-1">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37]" required /></div>
+              <div><label className="text-slate-400 block mb-1">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37]" required /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-400 block mb-1">Akses</label>
-                  <select value={authRole} onChange={(e) => setAuthRole(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-300"><option value="pegawai">Pegawai</option><option value="admin">Admin</option></select>
+                  <select value={authRole} onChange={(e) => setAuthRole(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-300 focus:outline-none"><option value="pegawai">Pegawai</option><option value="admin">Admin</option></select>
                 </div>
                 <div>
-                  <label className="text-slate-400 block mb-1">Unit</label>
-                  <select value={authUnit} onChange={(e) => setAuthUnit(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-300"><option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option></select>
+                  <label className="text-slate-400 block mb-1">Unit Kerja</label>
+                  <select value={authUnit} onChange={(e) => setAuthUnit(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-300 focus:outline-none"><option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option></select>
                 </div>
               </div>
-              <button type="submit" className="w-full bg-[#D4AF37] text-[#051622] font-bold rounded-xl py-3 mt-2 flex items-center justify-center gap-2 text-sm"><UserPlus size={16} /> Daftar</button>
+              <button type="submit" className="w-full bg-[#D4AF37] text-[#051622] font-black rounded-xl py-3.5 mt-2 flex items-center justify-center gap-2 text-sm uppercase tracking-wider"><UserPlus size={16} /> Daftar Akun</button>
               <p className="text-center text-slate-400 mt-4">Sudah punya akun? <button type="button" onClick={() => setIsRegisterMode(false)} className="text-[#D4AF37] font-bold underline ml-1">Login</button></p>
             </form>
           ) : (
             <form onSubmit={handleLogin} className="space-y-4 text-xs">
-              <div><label className="text-slate-400 block mb-1.5">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
-              <div><label className="text-slate-400 block mb-1.5">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none" required /></div>
-              <button type="submit" className="w-full bg-[#D4AF37] text-[#051622] font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 text-sm"><Lock size={16} /> Masuk</button>
+              <div><label className="text-slate-400 block mb-1.5">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37]" required /></div>
+              <div><label className="text-slate-400 block mb-1.5">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37]" required /></div>
+              <button type="submit" className="w-full bg-[#D4AF37] text-[#051622] font-black rounded-xl py-3.5 flex items-center justify-center gap-2 text-sm uppercase tracking-wider"><Lock size={16} /> Masuk Ke Sistem</button>
               <p className="text-center text-slate-400 mt-4">Belum punya akun? <button type="button" onClick={() => setIsRegisterMode(true)} className="text-[#D4AF37] font-bold underline ml-1">Registrasi</button></p>
             </form>
           )}
@@ -341,13 +342,13 @@ export default function App() {
       <header className="md:hidden flex items-center justify-between p-4 bg-[#051622] border-b border-slate-800 sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <img 
-            src="/logo-djkn.png" 
-            alt="Logo DJKN" 
+            src="/logo-sipka.png" 
+            alt="Logo SIPKA" 
             className="h-8 w-auto object-contain shrink-0" 
           />
           <div>
-            <h1 className="font-extrabold text-xs text-[#D4AF37] leading-none">DJKN SUMUT</h1>
-            <p className="text-[9px] text-slate-400 mt-0.5">Sistem Monitoring</p>
+            <h1 className="font-extrabold text-sm text-[#D4AF37] leading-none">SIPKA SUMUT</h1>
+            <p className="text-[9px] text-slate-400 mt-0.5">Sistem Pemantauan Terpadu</p>
           </div>
         </div>
         <button 
@@ -366,28 +367,34 @@ export default function App() {
         />
       )}
 
-      {/* 2. SIDEBAR NAVIGATION (DRAWER DI MOBILE, FIXED DI DESKTOP) */}
+      {/* 2. SIDEBAR NAVIGATION */}
       <aside className={`
         fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#051622] text-white flex flex-col justify-between shadow-2xl border-r border-slate-800
         transform transition-transform duration-300 ease-in-out md:sticky md:h-screen md:translate-x-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div>
-          {/* Header Sidebar (Hanya terlihat jelas di desktop karena di mobile sudah ada Top Bar) */}
+          {/* Header Sidebar Desktop */}
           <div className="p-5 border-b border-slate-800 flex items-center gap-4 bg-slate-950/30">
             <img 
-              src="/logo-djkn.png" 
-              alt="Logo DJKN" 
-              className="h-9 w-auto object-contain shrink-0" 
+              src="/logo-sipka.png" 
+              alt="Logo SIPKA" 
+              className="h-10 w-auto object-contain shrink-0" 
             />
             <div>
-              <h1 className="font-extrabold text-sm leading-tight text-[#D4AF37]">DJKN SUMUT</h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">Sistem Monitoring Internal</p>
+              <h1 className="font-black text-lg leading-tight text-white">SIPKA</h1>
+              <p className="text-[9px] text-[#D4AF37] font-bold mt-0.5 tracking-wider">KANWIL SUMUT</p>
             </div>
           </div>
 
           {/* Tombol Menu Navigasi */}
           <nav className="p-4 space-y-2">
+            <button 
+              onClick={() => navigateTo('homepage')} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${currentView === 'homepage' ? 'bg-[#D4AF37] text-[#051622]' : 'text-slate-400 hover:bg-slate-800/50'}`}
+            >
+              <Home size={18} /> Beranda & Filosofi
+            </button>
             <button 
               onClick={() => navigateTo('dashboard')} 
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition ${currentView === 'dashboard' ? 'bg-[#D4AF37] text-[#051622]' : 'text-slate-400 hover:bg-slate-800/50'}`}
@@ -413,7 +420,7 @@ export default function App() {
         <div className="p-4 border-t border-slate-800">
           <button 
             onClick={handleLogout} 
-            className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 text-xs font-semibold"
+            className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl py-2.5 text-xs font-bold uppercase tracking-widest"
           >
             <LogOut size={14} /> Keluar
           </button>
@@ -421,12 +428,12 @@ export default function App() {
       </aside>
 
       {/* 3. AREA KONTEN UTAMA */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#0b1724]">
         
         {/* JAM DIGITAL DESKTOP & INFORMASI AKUN */}
         <div className="hidden md:flex justify-between items-center mb-6 bg-[#051622] border border-slate-800 rounded-2xl p-4 shadow-lg">
           <div>
-            <h2 className="text-sm font-medium text-slate-400">Selamat Datang kembali, <span className="text-[#D4AF37] font-bold">{sessionUser?.name}</span></h2>
+            <h2 className="text-sm font-medium text-slate-400">Selamat Datang di SIPKA, <span className="text-[#D4AF37] font-bold">{sessionUser?.name}</span></h2>
             <p className="text-xs text-slate-500 mt-0.5">Unit Kerja: {sessionUser?.unit} ({sessionUser?.role?.toUpperCase()})</p>
           </div>
           <div className="text-right">
@@ -438,12 +445,104 @@ export default function App() {
         {/* JAM DIGITAL MOBILE */}
         <div className="md:hidden bg-[#051622] border border-slate-800 rounded-xl p-3 mb-4 flex justify-between items-center shadow-md">
           <div className="text-xs font-semibold text-slate-300">
-            {sessionUser?.name}
+            {sessionUser?.name} ({sessionUser?.unit})
           </div>
           <div className="text-right font-mono text-xs font-bold text-[#D4AF37]">
             {formatTimeWIB(currentTime)}
           </div>
         </div>
+
+        {/* ==================== VIEW: HOMEPAGE (FILOSOFI BARU) ==================== */}
+        {currentView === 'homepage' && (
+          <div className="max-w-5xl mx-auto space-y-12 pb-12 animate-fadeIn">
+            {/* HERO HERO COMPONENT */}
+            <div className="text-center space-y-4">
+              <img src="/logo-sipka.png" alt="SIPKA Logo" className="h-36 sm:h-44 w-auto mx-auto drop-shadow-[0_0_30px_rgba(212,175,55,0.25)]" />
+              <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter">SIPKA</h1>
+              <div className="inline-block bg-[#D4AF37]/10 border border-[#D4AF37]/30 px-4 py-1.5 rounded-full">
+                <p className="text-xs sm:text-sm text-[#D4AF37] font-black uppercase tracking-[0.25em]">Sistem Informasi Pemantauan Kepegawaian & Keuangan</p>
+              </div>
+              <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+                SIPKA dirancang sebagai platform analitik internal komprehensif guna melakukan pemantauan, pengelolaan akuntabel, serta pengendalian penuh terhadap aspek kepegawaian dan realisasi anggaran DIPA Kanwil.
+              </p>
+            </div>
+
+            {/* CARD FILOSOFI UTAMA */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-[#051622] border border-slate-800 p-8 rounded-3xl text-center space-y-3 group hover:border-[#D4AF37]/40 transition">
+                <div className="w-14 h-14 bg-blue-600/15 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition"><Target size={28}/></div>
+                <h3 className="font-black text-lg tracking-wide text-white">PANTAU</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">Penyajian akurasi data kepegawaian dan log transaksi secara riil melalui visualisasi dasbor yang intuitif.</p>
+              </div>
+              <div className="bg-[#051622] border border-slate-800 p-8 rounded-3xl text-center space-y-3 group hover:border-[#D4AF37]/40 transition">
+                <div className="w-14 h-14 bg-[#D4AF37]/15 text-[#D4AF37] rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition"><Settings size={28}/></div>
+                <h3 className="font-black text-lg tracking-wide text-white">KELOLA</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">Efisiensi administrasi internal dalam pencatatan anggaran per bidang, mutasi dana, serta pemutakhiran profile.</p>
+              </div>
+              <div className="bg-[#051622] border border-slate-800 p-8 rounded-3xl text-center space-y-3 group hover:border-[#D4AF37]/40 transition">
+                <div className="w-14 h-14 bg-emerald-600/15 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition"><Shield size={28}/></div>
+                <h3 className="font-black text-lg tracking-wide text-white">KENDALIKAN</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">Penguatan akuntabilitas pengawasan internal demi memitigasi risiko defisit anggaran dan overhead organisasi.</p>
+              </div>
+            </div>
+
+            {/* BEDAH FILOSOFI LOGO SIPKA */}
+            <div className="bg-[#051622] border border-slate-800 rounded-[2rem] p-6 sm:p-10">
+              <h2 className="text-xl font-black mb-8 flex items-center gap-3 text-white"><Info className="text-[#D4AF37]" size={22}/> Anatomi & Arti Logo SIPKA</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="space-y-1.5">
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Perisai Luar (Integritas)</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Melambangkan benteng proteksi, kepatuhan internal terhadap regulasi, serta komitmen penuh dalam menjaga keamanan kerahasiaan data.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Tiga Figur Manusia Sinergis</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Merepresentasikan aset utama organisasi (SDM) yang berkolaborasi harmonis antar bidang demi kemajuan Kanwil Sumatera Utara.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Grafik Batang Integral</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Mewakili kinerja keuangan berkelanjutan, pengalokasian DIPA yang presisi, serta penyajian data statistik yang transparan.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Lensa Kaca Pembesar</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Mencerminkan ketelitian, fungsi pengawasan internal (monitoring), serta evaluasi menyeluruh tanpa ada data yang luput.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Panah Akselerasi ke Atas</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Melambangkan pertumbuhan eksponensial efisiensi kerja, peningkatan kualitas layanan publik, dan visi modern masa depan.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-wide">Palet Warna Biru & Emas</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">Biru tua melambangkan profesionalisme kedinasan yang kokoh & tepercaya. Emas melambangkan standar kualitas prima dan kesuksesan.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* VISI & MANFAAT */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-5 flex flex-col justify-center">
+                <h2 className="text-xl font-black text-white">Manfaat Operasional</h2>
+                <ul className="space-y-3.5">
+                  {[
+                    "Konsolidasi data kepegawaian makro dan mikro terpusat",
+                    "Pemberantasan disparitas laporan anggaran dengan pencatatan digital real-time",
+                    "Kemudahan akses pemantauan grafik untuk menunjang decision making eksekutif",
+                    "Sistem otentikasi aman berbasis klasifikasi hak akses Admin dan Pegawai"
+                  ].map((benefit, index) => (
+                    <li key={index} className="flex items-start gap-3 text-xs text-slate-300 leading-relaxed">
+                      <CheckCircle size={16} className="text-[#D4AF37] shrink-0 mt-0.5" /> {benefit}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-gradient-to-br from-[#D4AF37]/10 to-transparent border border-[#D4AF37]/20 rounded-2xl p-6 sm:p-8 flex flex-col justify-center">
+                <h3 className="font-bold text-base text-[#D4AF37] mb-2">Pernyataan Tujuan</h3>
+                <p className="text-xs leading-relaxed text-slate-300 italic">
+                  \"Menjadikan SIPKA sebagai roda penggerak digitalisasi internal Kanwil Sumut yang andal, akurat, dan adaptif guna mempermudah pengawasan aset berharga aparatur sipil negara sekaligus pendayagunaan anggaran secara optimal.\""
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* VIEW: DASHBOARD KEUANGAN */}
         {currentView === 'dashboard' && (
@@ -595,7 +694,7 @@ export default function App() {
                       <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} />
                       <YAxis stroke="#94a3b8" fontSize={11} />
                       <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }} />
-                      <Bar dataKey="jumlah" fill="#1E3A8A" />
+                      <Bar dataKey="jumlah" fill="#1E3A8A" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
