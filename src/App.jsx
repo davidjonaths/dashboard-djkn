@@ -290,12 +290,11 @@ export default function App() {
         <div className="w-full max-w-md bg-[#051622] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10">
           <div className="text-center mb-6">
             <div className="flex justify-center mb-4">
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/1/10/Logo_Kementerian_Keuangan_Republik_Indonesia.png" 
-                alt="Logo Kemenkeu" 
-                className="w-20 h-20 sm:w-24 sm:h-24 object-contain" 
-                referrerPolicy="no-referrer"
-              />
+<img 
+  src="/logo-djkn.png" 
+  alt="Logo DJKN" 
+  className="..." 
+/>
             </div>
             <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide">KANWIL DJKN SUMATERA UTARA</h1>
             <p className="text-[11px] sm:text-xs text-slate-400 mt-1">Sistem Pemantauan Internal Kepegawaian & Keuangan</p>
@@ -341,12 +340,11 @@ export default function App() {
       {/* 1. TOP BAR KHUSUS LAYAR SMARTPHONE */}
       <header className="md:hidden flex items-center justify-between p-4 bg-[#051622] border-b border-slate-800 sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <img 
-            src="https://upload.wikimedia.org/wikipedia/commons/1/10/Logo_Kementerian_Keuangan_Republik_Indonesia.png" 
-            alt="Logo Kemenkeu" 
-            className="w-8 h-8 object-contain" 
-            referrerPolicy="no-referrer"
-          />
+<img 
+  src="/logo-djkn.png" 
+  alt="Logo DJKN" 
+  className="..." 
+/>
           <div>
             <h1 className="font-extrabold text-xs text-[#D4AF37] leading-none">DJKN SUMUT</h1>
             <p className="text-[9px] text-slate-400 mt-0.5">Sistem Monitoring</p>
@@ -378,11 +376,10 @@ export default function App() {
           {/* Header Sidebar (Hanya terlihat jelas di desktop karena di mobile sudah ada Top Bar) */}
           <div className="p-5 border-b border-slate-800 flex items-center gap-4 bg-slate-950/30">
             <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/1/10/Logo_Kementerian_Keuangan_Republik_Indonesia.png" 
-              alt="Logo Kemenkeu" 
-              className="w-10 h-10 object-contain" 
-              referrerPolicy="no-referrer"
-            />
+  src="/logo-djkn.png" 
+  alt="Logo DJKN" 
+  className="..." 
+/>
             <div>
               <h1 className="font-extrabold text-sm leading-tight text-[#D4AF37]">DJKN SUMUT</h1>
               <p className="text-[10px] text-slate-400 mt-0.5">Sistem Monitoring Internal</p>
