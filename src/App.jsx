@@ -79,7 +79,7 @@ const GENERAL_COLORS = ['#D4AF37', '#1E3A8A', '#475569', '#64748b', '#94A3B8', '
 
 export default function App() {
   // --- STATE NAVIGATION & AUTHENTICATION ---
-  const [currentView, setCurrentView] = useState('homepage'); // Set default ke halaman filosofi baru
+  const [currentView, setCurrentView] = useState('homepage'); 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [sessionUser, setSessionUser] = useState(null);
@@ -219,7 +219,7 @@ export default function App() {
       localStorage.setItem('djkn_session', JSON.stringify(userDitemukan));
       setSessionUser(userDitemukan);
       setIsLoggedIn(true);
-      setCurrentView('homepage'); // Redirect langsung ke Beranda Filosofi
+      setCurrentView('homepage'); 
       setAuthUsername('');
       setAuthPassword('');
     } else {
@@ -292,13 +292,13 @@ export default function App() {
           <div className="text-center mb-6">
             <div className="flex justify-center mb-4">
               <img 
-                src="/logo-sipka.png" 
+                src="/SIPKA-logo.png" 
                 alt="Logo SIPKA" 
                 className="h-20 w-auto object-contain mx-auto drop-shadow-[0_0_15px_rgba(212,175,55,0.15)]" 
               />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">SIPKA</h1>
-            <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-[0.2em] mt-1">Sistem Informasi Pemantauan Kepegawaian & Keuangan Kantor Wilayah DJKN Sumut</p>
+            <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-[0.2em] mt-1">Sistem Informasi Pemantauan Kepegawaian & Keuangan</p>
           </div>
 
           {authError && <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl text-xs text-center font-medium mb-4">{authError}</div>}
@@ -342,7 +342,7 @@ export default function App() {
       <header className="md:hidden flex items-center justify-between p-4 bg-[#051622] border-b border-slate-800 sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <img 
-            src="/logo-sipka.png" 
+            src="/SIPKA-logo.png" 
             alt="Logo SIPKA" 
             className="h-8 w-auto object-contain shrink-0" 
           />
@@ -377,7 +377,7 @@ export default function App() {
           {/* Header Sidebar Desktop */}
           <div className="p-5 border-b border-slate-800 flex items-center gap-4 bg-slate-950/30">
             <img 
-              src="/logo-sipka.png" 
+              src="/SIPKA-logo.png" 
               alt="Logo SIPKA" 
               className="h-10 w-auto object-contain shrink-0" 
             />
@@ -457,10 +457,10 @@ export default function App() {
           <div className="max-w-5xl mx-auto space-y-12 pb-12 animate-fadeIn">
             {/* HERO HERO COMPONENT */}
             <div className="text-center space-y-4">
-              <img src="/logo-sipka.png" alt="SIPKA Logo" className="h-36 sm:h-44 w-auto mx-auto drop-shadow-[0_0_30px_rgba(212,175,55,0.25)]" />
+              <img src="/SIPKA-logo.png" alt="SIPKA Logo" className="h-36 sm:h-44 w-auto mx-auto drop-shadow-[0_0_30px_rgba(212,175,55,0.25)]" />
               <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter">SIPKA</h1>
               <div className="inline-block bg-[#D4AF37]/10 border border-[#D4AF37]/30 px-4 py-1.5 rounded-full">
-                <p className="text-xs sm:text-sm text-[#D4AF37] font-black uppercase tracking-[0.25em]">Sistem Informasi Pemantauan Kepegawaian & Keuangan Kantor Wilayah DJKN Sumut</p>
+                <p className="text-xs sm:text-sm text-[#D4AF37] font-black uppercase tracking-[0.25em]">Sistem Informasi Pemantauan Kepegawaian & Keuangan</p>
               </div>
               <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
                 SIPKA dirancang sebagai platform analitik internal komprehensif guna melakukan pemantauan, pengelolaan akuntabel, serta pengendalian penuh terhadap aspek kepegawaian dan realisasi anggaran DIPA Kanwil.
@@ -537,7 +537,7 @@ export default function App() {
               <div className="bg-gradient-to-br from-[#D4AF37]/10 to-transparent border border-[#D4AF37]/20 rounded-2xl p-6 sm:p-8 flex flex-col justify-center">
                 <h3 className="font-bold text-base text-[#D4AF37] mb-2">Pernyataan Tujuan</h3>
                 <p className="text-xs leading-relaxed text-slate-300 italic">
-                  \"Menjadikan SIPKA sebagai roda penggerak digitalisasi internal Kanwil Sumut yang andal, akurat, dan adaptif guna mempermudah pengawasan aset berharga aparatur sipil negara sekaligus pendayagunaan anggaran secara optimal.\""
+                  "Menjadikan SIPKA sebagai roda penggerak digitalisasi internal Kanwil Sumut yang andal, akurat, dan adaptif guna mempermudah pengawasan aset berharga aparatur sipil negara sekaligus pendayagunaan anggaran secara optimal."
                 </p>
               </div>
             </div>
