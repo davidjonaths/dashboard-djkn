@@ -1,8 +1,9 @@
+import * as XLSX from 'xlsx';
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, TrendingUp, Bell, User, LogOut, Home,
   ArrowUpRight, PlusCircle, PieChart as PieIcon, Lock, UserPlus, Settings, UserCheck, Users, Menu, X,
-  Shield, CheckCircle, Target, Info, MapPin, Mail, Eye, EyeOff, ArrowLeft
+  Shield, CheckCircle, Target, Info, MapPin, Mail, Eye, EyeOff, ArrowLeft, Sun, Moon
 } from 'lucide-react';
 import { SiInstagram, SiFacebook, SiYoutube } from 'react-icons/si';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -77,6 +78,149 @@ const dataStatistikAgama = [
 const GENDER_COLORS = ['#1E3A8A', '#D4AF37'];
 const GOLDAR_COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B'];
 
+const THEME_STYLE = `
+.theme-light {
+  color: #0f172a;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 54%, #eef4ff 100%) !important;
+}
+
+.theme-light .theme-text-primary,
+.theme-light .text-white,
+.theme-light .text-slate-900,
+.theme-light .text-slate-800 {
+  color: #0f172a !important;
+}
+
+.theme-light .theme-text-secondary,
+.theme-light .text-slate-300,
+.theme-light .text-slate-400,
+.theme-light .text-slate-500,
+.theme-light .text-slate-600,
+.theme-light .text-slate-700 {
+  color: #475569 !important;
+}
+
+.theme-light .theme-text-muted {
+  color: #64748b !important;
+}
+
+.theme-light .theme-border,
+.theme-light .border-slate-200,
+.theme-light .border-slate-700,
+.theme-light .border-slate-800,
+.theme-light .border-slate-900 {
+  border-color: #dbe3f0 !important;
+}
+
+.theme-light .theme-root {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 54%, #eef4ff 100%) !important;
+}
+
+.theme-light .theme-landing-nav,
+.theme-light .theme-dashboard-top,
+.theme-light .theme-surface,
+.theme-light .theme-sidebar,
+.theme-light .theme-sidebar-header,
+.theme-light .theme-footer,
+.theme-light .theme-card-light,
+.theme-light .theme-panel-light {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: #dbe3f0 !important;
+}
+
+.theme-light .theme-landing-menu {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-color: #dbe3f0 !important;
+}
+
+.theme-light .theme-hero-glow {
+  background: radial-gradient(circle, rgba(212,175,55,0.16), rgba(212,175,55,0.05) 48%, transparent 72%) !important;
+}
+
+.theme-light [class*="bg-slate-900/40"],
+.theme-light [class*="bg-slate-800/30"],
+.theme-light [class*="bg-slate-800/40"],
+.theme-light [class*="bg-slate-800/50"],
+.theme-light [class*="bg-slate-800/60"],
+.theme-light [class*="bg-slate-700/40"],
+.theme-light [class*="bg-slate-700/50"],
+.theme-light [class*="bg-slate-700/60"] {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: #dbe3f0 !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08) !important;
+}
+
+.theme-light [class*="from-[#17375f] via-[#1d4f86] to-[#132f55]"] {
+  background-image: linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #eef4ff 100%) !important;
+  border-color: #dbe3f0 !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08) !important;
+}
+
+.theme-light [class*="bg-[#0f172a]/90"],
+.theme-light [class*="bg-[#0b1724]"],
+.theme-light [class*="bg-[#020617]"] {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-color: #dbe3f0 !important;
+}
+
+.theme-light [class*="bg-gradient-to-br from-[#0f172a] via-[#0b1724] to-[#020617]"] {
+  background-image: linear-gradient(135deg, #f8fafc 0%, #ffffff 54%, #eef4ff 100%) !important;
+}
+
+.theme-light [class*="bg-white"] {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+}
+
+.theme-light [class*="text-[#D4AF37]"] {
+  color: #b8860b !important;
+}
+`;
+
+
+const STATISTIK_FIELD_ALIASES = {
+  unit: ['unit', 'bagian', 'bidang', 'seksi', 'departemen', 'department', 'office'],
+  gender: ['gender', 'jenis_kelamin', 'jk', 'sex'],
+  jabatan: ['jabatan', 'posisi', 'eselon', 'grade'],
+  pendidikan: ['pendidikan', 'education', 'degree'],
+  generasi: ['generasi', 'kelompok_usia', 'age_group', 'angkatan'],
+  goldar: ['goldar', 'golongan_darah', 'blood_type', 'golongan darah'],
+  agama: ['agama', 'religion', 'kepercayaan']
+};
+
+const normalizeCell = (value) => String(value ?? '').trim();
+
+const pickFirstValue = (row, aliases) => {
+  for (const key of aliases) {
+    const value = normalizeCell(row?.[key]);
+    if (value) return value;
+  }
+  return '';
+};
+
+const buildCountData = (rows, aliases, order = [], valueKey = 'jumlah', labelKey = 'name') => {
+  const counts = new Map();
+
+  rows.forEach((row) => {
+    const value = pickFirstValue(row, aliases) || 'Tidak diketahui';
+    counts.set(value, (counts.get(value) || 0) + 1);
+  });
+
+  const ordered = order.map((name) => ({
+    [labelKey]: name,
+    [valueKey]: counts.get(name) || 0,
+  }));
+
+  const extras = [...counts.entries()]
+    .filter(([name]) => !order.includes(name))
+    .map(([name, count]) => ({
+      [labelKey]: name,
+      [valueKey]: count,
+    }));
+
+  return [...ordered, ...extras];
+};
+
+
 export default function App() {
   // --- STATE NAVIGATION & AUTHENTICATION ---
   const [currentView, setCurrentView] = useState('dashboard'); 
@@ -90,6 +234,16 @@ export default function App() {
   const [sessionUser, setSessionUser] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
   const [showPassword, setShowPassword] = useState(false); 
+  const [themeMode, setThemeMode] = useState(() => {
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('djkn_theme') : null;
+    if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'dark';
+  });
+  const isDarkMode = themeMode === 'dark';
+  const toggleTheme = () => setThemeMode((prev) => (prev === 'dark' ? 'light' : 'dark'));
   
   const [databaseUsers, setDatabaseUsers] = useState(() => {
     const savedUsers = localStorage.getItem('djkn_users');
@@ -132,6 +286,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('djkn_users', JSON.stringify(databaseUsers));
   }, [databaseUsers]);
+
+  useEffect(() => {
+    localStorage.setItem('djkn_theme', themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
     const savedSession = localStorage.getItem('djkn_session');
@@ -179,6 +337,9 @@ export default function App() {
   const [nominalInput, setNominalInput] = useState('');
   const [bidangInput, setBidangInput] = useState('Bagian Umum');
   const [tipeInput, setTipeInput] = useState('keluar');
+
+  const [statistikExcelRows, setStatistikExcelRows] = useState([]);
+  const [statistikExcelFileName, setStatistikExcelFileName] = useState('');
 
   const handleRegister = (e) => {
     e.preventDefault();
@@ -269,6 +430,7 @@ export default function App() {
     setTimeout(() => setProfileSuccess(''), 3000);
   };
 
+// --- FUNGSI TAMBAH TRANSAKSI (Sesuai kode Anda) ---
   const handleTambahTransaksi = (e) => {
     e.preventDefault();
     if (sessionUser?.role !== 'admin') return alert('Akses ditolak!');
@@ -284,10 +446,89 @@ export default function App() {
       jumlah: parseFloat(nominalInput),
       tipe: tipeInput
     };
-
+    
     setTransaksi([transaksiBaru, ...transaksi]);
     setUraianInput('');
     setNominalInput('');
+  };
+
+  // --- FUNGSI IMPORT EXCEL (Diletakkan di sini agar terbaca) ---
+  const handleImportExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+        
+        const dataBaru = data.map(item => ({
+          id: Date.now() + Math.random(),
+          date: item.tanggal || new Date().toLocaleDateString('id-ID'),
+          uraian: item.uraian || "Data Import",
+          akun: item.akun || "425111",
+          bidang: item.bidang || "Bagian Umum",
+          jumlah: parseFloat(item.jumlah) || 0,
+          tipe: item.tipe || "keluar"
+        }));
+
+        setTransaksi([...dataBaru, ...transaksi]);
+        alert(`Berhasil mengimpor ${dataBaru.length} data!`);
+      } catch (error) {
+        alert("Gagal membaca file. Pastikan format Excel sesuai.");
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+
+  const handleImportStatistikExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const rawData = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+        const normalizedRows = rawData.map((row) => ({
+          unit: pickFirstValue(row, STATISTIK_FIELD_ALIASES.unit),
+          gender: pickFirstValue(row, STATISTIK_FIELD_ALIASES.gender),
+          jabatan: pickFirstValue(row, STATISTIK_FIELD_ALIASES.jabatan),
+          pendidikan: pickFirstValue(row, STATISTIK_FIELD_ALIASES.pendidikan),
+          generasi: pickFirstValue(row, STATISTIK_FIELD_ALIASES.generasi),
+          goldar: pickFirstValue(row, STATISTIK_FIELD_ALIASES.goldar),
+          agama: pickFirstValue(row, STATISTIK_FIELD_ALIASES.agama),
+        }));
+
+        if (!normalizedRows.length) {
+          alert('File Excel tidak memiliki data yang bisa dibaca.');
+          return;
+        }
+
+        setStatistikExcelRows(normalizedRows);
+        setStatistikExcelFileName(file.name);
+        alert(`Berhasil mengimpor ${normalizedRows.length} data pegawai untuk menu statistik!`);
+      } catch (error) {
+        alert('Gagal membaca file statistik. Pastikan file Excel valid dan memiliki kolom yang sesuai.');
+      } finally {
+        e.target.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleResetStatistikImport = () => {
+    setStatistikExcelRows([]);
+    setStatistikExcelFileName('');
   };
 
   const scrollToSection = (id) => {
@@ -298,6 +539,29 @@ export default function App() {
     }
   };
 
+
+  const statistikSourceRows = statistikExcelRows.length > 0 ? statistikExcelRows : null;
+  const dataStatistikUnitTampil = statistikSourceRows
+    ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.unit, dataStatistikUnit.map((item) => item.unit), 'jumlah', 'unit')
+    : dataStatistikUnit;
+  const dataStatistikGenderTampil = statistikSourceRows
+    ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.gender, dataStatistikGender.map((item) => item.name), 'value')
+    : dataStatistikGender;
+  const dataStatistikJabatanTampil = statistikSourceRows
+    ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.jabatan, dataStatistikJabatan.map((item) => item.name), 'jumlah')
+    : dataStatistikJabatan;
+  const dataStatistikPendidikanTampil = statistikSourceRows
+    ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.pendidikan, dataStatistikPendidikan.map((item) => item.name), 'jumlah')
+    : dataStatistikPendidikan;
+  const dataStatistikGenerasiTampil = statistikSourceRows
+    ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.generasi, dataStatistikGenerasi.map((item) => item.name), 'jumlah')
+    : dataStatistikGenerasi;
+  const dataStatistikGoldarTampil = statistikSourceRows
+    ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.goldar, dataStatistikGoldar.map((item) => item.name), 'value')
+    : dataStatistikGoldar;
+  const dataStatistikAgamaTampil = statistikSourceRows
+    ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.agama, dataStatistikAgama.map((item) => item.name), 'jumlah')
+    : dataStatistikAgama;
   // ==================== VIEW: LANDING PAGE & AUTHENTICATION ====================
   if (!isLoggedIn) {
     // JIKA USER KLIK TOMBOL "LOGIN", TAMPILKAN FORM INI
@@ -408,10 +672,11 @@ export default function App() {
 
     // TAMPILAN LANDING PAGE UTAMA (FULL PAGE)
     return (
-      <div className="bg-gradient-to-br from-[#0f172a] via-[#0b1724] to-[#020617] min-h-screen font-sans text-slate-200 overflow-x-hidden scroll-smooth">
+      <div className={`theme-root theme-landing-root bg-gradient-to-br from-[#0f172a] via-[#0b1724] to-[#020617] min-h-screen font-sans text-slate-200 overflow-x-hidden scroll-smooth ${isDarkMode ? "theme-dark" : "theme-light"}`}>
+        <style>{THEME_STYLE}</style>
         
         {/* Navigasi Bar */}
-        <nav className="fixed top-0 w-full z-50 bg-[#0f172a]/90 backdrop-blur-md border-b border-slate-800 transition-all">
+        <nav className="fixed top-0 w-full z-50 bg-[#0f172a]/90 backdrop-blur-md border-b border-slate-800 transition-all theme-landing-nav">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
               {/* Kiri: Logo */}
@@ -428,6 +693,12 @@ export default function App() {
                 <button onClick={() => scrollToSection('beranda')} className="text-sm font-semibold text-slate-300 hover:text-[#D4AF37] transition-colors">Beranda</button>
                 <button onClick={() => scrollToSection('filosofi')} className="text-sm font-semibold text-slate-300 hover:text-[#D4AF37] transition-colors">Filosofi Logo</button>
                 <button onClick={() => scrollToSection('layanan')} className="text-sm font-semibold text-slate-300 hover:text-[#D4AF37] transition-colors">Layanan & Kontak</button>
+                <button 
+                  onClick={toggleTheme}
+                  className="border border-slate-600/40 text-slate-200 hover:text-white hover:border-[#D4AF37] px-4 py-2.5 rounded-full text-sm flex items-center gap-2 transition-all bg-slate-800/40"
+                >
+                  {isDarkMode ? <Sun size={14} /> : <Moon size={14} />} {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </button>
                 <button 
                   onClick={() => setShowAuthForm(true)} 
                   className="bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-bold px-6 py-2.5 rounded-full text-sm flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-[#D4AF37]/20"
@@ -450,11 +721,17 @@ export default function App() {
 
           {/* Menu Mobile Dropdown */}
           {isLandingMobileMenuOpen && (
-            <div className="md:hidden bg-[#0f172a] border-b border-slate-800 animate-fadeIn">
+            <div className="md:hidden bg-[#0f172a] border-b border-slate-800 animate-fadeIn theme-landing-menu">
               <div className="px-4 pt-2 pb-6 space-y-2">
                 <button onClick={() => scrollToSection('beranda')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Beranda</button>
                 <button onClick={() => scrollToSection('filosofi')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Filosofi Logo</button>
                 <button onClick={() => scrollToSection('layanan')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Layanan & Kontak</button>
+                <button 
+                  onClick={toggleTheme}
+                  className="w-full mt-4 border border-slate-600/40 text-slate-200 bg-slate-800/40 font-bold px-4 py-3 rounded-xl text-base flex justify-center items-center gap-2"
+                >
+                  {isDarkMode ? <Sun size={16} /> : <Moon size={16} />} {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </button>
                 <button 
                   onClick={() => setShowAuthForm(true)} 
                   className="w-full mt-4 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-bold px-4 py-3 rounded-xl text-base flex justify-center items-center gap-2"
@@ -467,8 +744,8 @@ export default function App() {
         </nav>
 
         {/* Hero Section */}
-        <section id="beranda" className="pt-32 pb-20 px-6 min-h-screen flex items-center relative">
-          <div className="absolute top-[10%] left-[50%] -translate-x-1/2 w-[80%] max-w-2xl h-[500px] bg-[#D4AF37]/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <section id="beranda" className="pt-32 pb-20 px-6 min-h-screen flex items-center relative theme-landing-hero">
+          <div className="absolute top-[10%] left-[50%] -translate-x-1/2 w-[80%] max-w-2xl h-[500px] bg-[#D4AF37]/5 rounded-full blur-[120px] pointer-events-none theme-hero-glow"></div>
           <div className="max-w-4xl mx-auto text-center relative z-10">
             <img src="/SIPKA-logo.png" alt="SIPKA Hero" className="h-28 sm:h-40 mx-auto mb-8 drop-shadow-[0_0_25px_rgba(212,175,55,0.2)] animate-pulse" />
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight mb-6">
@@ -496,7 +773,7 @@ export default function App() {
         </section>
 
         {/* Filosofi Section (Grid) */}
-        <section id="filosofi" className="py-20 px-6 bg-slate-900/40 border-t border-b border-slate-800/50 relative">
+        <section id="filosofi" className="py-20 px-6 bg-slate-900/40 border-t border-b border-slate-800/50 relative theme-landing-section">
           <div className="max-w-6xl mx-auto relative z-10">
             <div className="text-center mb-16">
               <h2 className="text-xs font-black text-[#D4AF37] tracking-[0.2em] uppercase mb-3 flex items-center justify-center gap-2">
@@ -507,7 +784,7 @@ export default function App() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Card 1 */}
-              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md">
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
                 <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm">
                   <img src="/perisai.png" alt="Perisai" className="h-10 w-10 object-contain" />
                 </div>
@@ -518,7 +795,7 @@ export default function App() {
               </div>
 
               {/* Card 2 */}
-              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md">
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
                 <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm">
                   <img src="/tiga-manusia.png" alt="Tiga Manusia" className="h-10 w-10 object-contain" />
                 </div>
@@ -529,7 +806,7 @@ export default function App() {
               </div>
 
               {/* Card 3 */}
-              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md">
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
                 <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm">
                   <img src="/grafik.png" alt="Grafik" className="h-10 w-10 object-contain" />
                 </div>
@@ -540,7 +817,7 @@ export default function App() {
               </div>
 
               {/* Card 4 */}
-              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md">
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
                 <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm">
                   <img src="/kaca-pembesar.png" alt="Kaca Pembesar" className="h-10 w-10 object-contain" />
                 </div>
@@ -551,7 +828,7 @@ export default function App() {
               </div>
 
               {/* Card 5 */}
-              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md">
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
                 <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm">
                   <img src="/panah.png" alt="Panah" className="h-10 w-10 object-contain" />
                 </div>
@@ -562,7 +839,7 @@ export default function App() {
               </div>
 
               {/* Card 6 */}
-              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md">
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
                 <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm">
                   <img src="/warna.png" alt="Warna Filosofi" className="h-10 w-10 object-contain" />
                 </div>
@@ -576,7 +853,7 @@ export default function App() {
         </section>
 
         {/* Layanan & Footer Section */}
-        <footer id="layanan" className="bg-[#0b1724] pt-20 pb-10 px-6 mt-10">
+        <footer id="layanan" className="bg-[#0b1724] pt-20 pb-10 px-6 mt-10 theme-footer">
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -632,10 +909,11 @@ export default function App() {
   // ==================== TAMPILAN DASHBOARD SETELAH LOGIN ====================
   // (Kode dashboard, statistik, & profile tetap sama persis seperti sebelumnya)
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-slate-100 text-slate-900 overflow-hidden font-sans relative">
+    <div className={`theme-root theme-dashboard-root flex flex-col md:flex-row h-screen bg-slate-100 text-slate-900 overflow-hidden font-sans relative ${isDarkMode ? "theme-dark" : "theme-light"}`}>
+      <style>{THEME_STYLE}</style>
       
       {/* 1. TOP BAR KHUSUS LAYAR SMARTPHONE */}
-      <header className="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-md">
+      <header className="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-md theme-dashboard-top">
         <div className="flex items-center gap-3">
           <img 
             src="/SIPKA-logo.png" 
@@ -647,12 +925,21 @@ export default function App() {
             <p className="text-[9px] text-slate-600 mt-0.5">Sistem Pemantauan Terpadu</p>
           </div>
         </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-          className="p-2 text-slate-600 hover:text-white bg-slate-100 rounded-xl border border-slate-200 transition"
-        >
-          {isMobileMenuOpen ? <X size={18} className="text-[#D4AF37]" /> : <Menu size={18} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={toggleTheme}
+            className="p-2 text-slate-600 hover:text-[#D4AF37] bg-slate-100 rounded-xl border border-slate-200 transition"
+            aria-label="Toggle theme"
+          >
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+            className="p-2 text-slate-600 hover:text-white bg-slate-100 rounded-xl border border-slate-200 transition"
+          >
+            {isMobileMenuOpen ? <X size={18} className="text-[#D4AF37]" /> : <Menu size={18} />}
+          </button>
+        </div>
       </header>
 
       {/* OVERLAY BACKGROUND SAAT NAVIGASI MOBILE AKTIF */}
@@ -670,17 +957,21 @@ export default function App() {
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div>
-          {/* Header Sidebar Desktop */}
-          <div className="p-5 border-b border-slate-200 flex items-center gap-4 bg-slate-50 backdrop-blur-sm">
-            <img 
-              src="/SIPKA-logo.png" 
-              alt="Logo SIPKA" 
-              className="h-10 w-auto object-contain shrink-0" 
-            />
-            <div>
-              <h1 className="font-black text-lg leading-tight text-slate-900">SIPKA</h1>
-              <p className="text-[9px] text-[#D4AF37] font-bold mt-0.5 tracking-wider">KANWIL SUMUT</p>
+          {/* Header Sidebar Desktop */}          <div className="p-5 border-b border-slate-200 flex items-center justify-between gap-4 bg-slate-50 backdrop-blur-sm theme-sidebar-header">
+            <div className="flex items-center gap-4">
+              <img 
+                src="/SIPKA-logo.png" 
+                alt="Logo SIPKA" 
+                className="h-10 w-auto object-contain shrink-0" 
+              />
+              <div>
+                <h1 className="font-black text-lg leading-tight text-slate-900">SIPKA</h1>
+                <p className="text-[9px] text-[#D4AF37] font-bold mt-0.5 tracking-wider">KANWIL SUMUT</p>
+              </div>
             </div>
+            <button onClick={toggleTheme} className="p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 hover:text-[#D4AF37] transition" aria-label="Toggle theme">
+              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
           </div>
 
           {/* Tombol Menu Navigasi */}
@@ -718,10 +1009,10 @@ export default function App() {
       </aside>
 
       {/* 3. AREA KONTEN UTAMA DASHBOARD */}
-      <main className="flex-1 overflow-y-auto bg-slate-100">
+      <main className="flex-1 overflow-y-auto bg-slate-100 theme-dashboard-main">
         <div className="p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-80px)]">
           {/* JAM DIGITAL DESKTOP & INFORMASI AKUN */}
-          <div className="hidden md:flex justify-between items-center mb-6 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <div className="hidden md:flex justify-between items-center mb-6 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm theme-surface">
             <div>
               <h2 className="text-sm font-medium text-slate-600">Selamat Datang di SIPKA, <span className="text-[#D4AF37] font-bold">{sessionUser?.name}</span></h2>
               <p className="text-xs text-slate-600 mt-0.5">Unit Kerja: {sessionUser?.unit} ({sessionUser?.role?.toUpperCase()})</p>
@@ -733,7 +1024,7 @@ export default function App() {
           </div>
 
           {/* JAM DIGITAL MOBILE */}
-          <div className="md:hidden bg-white border border-slate-200 rounded-xl p-3 mb-4 flex justify-between items-center shadow-sm">
+          <div className="md:hidden bg-white border border-slate-200 rounded-xl p-3 mb-4 flex justify-between items-center shadow-sm theme-surface">
             <div className="text-xs font-semibold text-slate-700">
               {sessionUser?.name} ({sessionUser?.unit})
             </div>
@@ -746,25 +1037,38 @@ export default function App() {
           {currentView === 'dashboard' && (
             <div className="space-y-6 animate-fadeIn">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
                   <div className="text-slate-300 text-xs font-medium">Total Realisasi</div>
                   <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">Rp 8,2 Miliar</div>
                   <div className="text-[10px] text-emerald-400 mt-2 flex items-center gap-1 font-semibold"><TrendingUp size={12}/> Target Selesai Juni</div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
                   <div className="text-slate-300 text-xs font-medium">Jumlah Transaksi</div>
                   <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">{transaksi.length} Berkas</div>
                   <div className="text-[10px] text-white mt-2 font-medium">Tercatat di sistem lokal</div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
                   <div className="text-slate-300 text-xs font-medium">Status Anggaran</div>
                   <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">Optimal</div>
                   <div className="text-[10px] text-white mt-2 font-medium">Sesuai dengan pagu DIPA</div>
                 </div>
               </div>
 
+              {/* Tambahkan ini di dekat form input tambah transaksi */}
+<div className="mt-4">
+  <label className="block w-full text-center bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl cursor-pointer transition-colors text-xs border border-slate-600">
+    <input 
+      type="file" 
+      accept=".xlsx, .xls" 
+      onChange={handleImportExcel} 
+      className="hidden" 
+    />
+    Import Data Excel
+  </label>
+</div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className="text-xs font-black text-white mb-5 tracking-widest uppercase">Tren Realisasi Anggaran (Jutaan Rp)</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -779,7 +1083,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className="text-xs font-black text-white mb-5 tracking-widest uppercase">Alokasi Per Bidang (Miliar Rp)</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -800,38 +1104,57 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {sessionUser?.role === 'admin' && (
-                  <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl h-fit">
-                    <h3 className="text-xs font-black text-white mb-5 flex items-center gap-2"><PlusCircle size={16} className="text-[#D4AF37]" /> TAMBAH TRANSAKSI BARU</h3>
-                    <form onSubmit={handleTambahTransaksi} className="space-y-4 text-xs">
-                      <div>
-                        <label className="text-slate-300 block mb-1.5 font-medium">Uraian Transaksi</label>
-                        <input type="text" value={uraianInput} onChange={(e) => setUraianInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" placeholder="Contoh: Pembelian ATK Kantor" required />
-                      </div>
-                      <div>
-                        <label className="text-slate-300 block mb-1.5 font-medium">Nominal Anggaran (Rp)</label>
-                        <input type="number" value={nominalInput} onChange={(e) => setNominalInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" placeholder="Contoh: 5000000" required />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-slate-300 block mb-1.5 font-medium">Bidang / Unit</label>
-                          <select value={bidangInput} onChange={(e) => setBidangInput(e.target.value)} className="w-full bg-white border border-slate-700 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition">
-                            <option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-slate-300 block mb-1.5 font-medium">Jenis Arus</label>
-                          <select value={tipeInput} onChange={(e) => setTipeInput(e.target.value)} className="w-full bg-white border border-slate-700 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition">
-                            <option value="keluar">Pengeluaran</option><option value="masuk">Pemasukan</option>
-                          </select>
-                        </div>
-                      </div>
-                      <button type="submit" className="w-full bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 mt-2 rounded-xl transition-transform hover:scale-[1.02] shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center gap-2">
-                        <PlusCircle size={14}/> Simpan Anggaran
-                      </button>
-                    </form>
-                  </div>
-                )}
+{sessionUser?.role === 'admin' && (
+  <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl h-fit theme-panel-light">
+    <h3 className="text-xs font-black text-white mb-5 flex items-center gap-2">
+      <PlusCircle size={16} className="text-[#D4AF37]" /> TAMBAH TRANSAKSI BARU
+    </h3>
+    
+    <form onSubmit={handleTambahTransaksi} className="space-y-4 text-xs">
+      <div>
+        <label className="text-slate-300 block mb-1.5 font-medium">Uraian Transaksi</label>
+        <input type="text" value={uraianInput} onChange={(e) => setUraianInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" placeholder="Contoh: Pembelian ATK Kantor" required />
+      </div>
+      <div>
+        <label className="text-slate-300 block mb-1.5 font-medium">Nominal Anggaran (Rp)</label>
+        <input type="number" value={nominalInput} onChange={(e) => setNominalInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" placeholder="Contoh: 5000000" required />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-slate-300 block mb-1.5 font-medium">Bidang / Unit</label>
+          <select value={bidangInput} onChange={(e) => setBidangInput(e.target.value)} className="w-full bg-white border border-slate-700 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition">
+            <option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-slate-300 block mb-1.5 font-medium">Jenis Arus</label>
+          <select value={tipeInput} onChange={(e) => setTipeInput(e.target.value)} className="w-full bg-white border border-slate-700 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition">
+            <option value="keluar">Pengeluaran</option><option value="masuk">Pemasukan</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Container Tombol agar berjajar */}
+      <div className="flex gap-3 pt-2">
+        {/* Tombol Simpan */}
+        <button type="submit" className="flex-1 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 rounded-xl transition-transform hover:scale-[1.02] shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center gap-2">
+          <PlusCircle size={14}/> Simpan
+        </button>
+
+        {/* Tombol Import Excel */}
+        <label className="flex-1 text-center bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl cursor-pointer transition-colors border border-slate-600 flex items-center justify-center gap-2">
+          <input 
+            type="file" 
+            accept=".xlsx, .xls" 
+            onChange={handleImportExcel} 
+            className="hidden" 
+          />
+          Import Excel
+        </label>
+      </div>
+    </form>
+  </div>
+)}
 
                 <div className={`bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl ${sessionUser?.role === 'admin' ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
                   <h3 className="text-xs font-black text-white mb-5 tracking-widest uppercase">Log Mutasi Anggaran Terkini</h3>
@@ -867,12 +1190,48 @@ export default function App() {
           {/* VIEW: STATISTIK PEGAWAI */}
           {currentView === 'statistik' && (
             <div className="space-y-6 animate-fadeIn">
+              <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div>
+                    <h3 className="text-xs font-black text-white uppercase tracking-widest">Import Data Excel Pegawai</h3>
+                    <p className="text-[11px] text-slate-300 mt-2 leading-relaxed max-w-2xl">
+                      Upload file Excel berisi data pegawai untuk memperbarui visual statistik secara otomatis. Kolom yang didukung antara lain: <span className="text-[#D4AF37] font-semibold">unit</span>, <span className="text-[#D4AF37] font-semibold">gender</span>, <span className="text-[#D4AF37] font-semibold">jabatan</span>, <span className="text-[#D4AF37] font-semibold">pendidikan</span>, <span className="text-[#D4AF37] font-semibold">generasi</span>, <span className="text-[#D4AF37] font-semibold">goldar</span>, dan <span className="text-[#D4AF37] font-semibold">agama</span>.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <label className="inline-flex items-center justify-center gap-2 text-center bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 px-5 rounded-xl cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-[#D4AF37]/20 text-xs uppercase tracking-wider">
+                      <input 
+                        type="file" 
+                        accept=".xlsx, .xls" 
+                        onChange={handleImportStatistikExcel} 
+                        className="hidden" 
+                      />
+                      Import Excel Statistik
+                    </label>
+                    {statistikExcelRows.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleResetStatistikImport}
+                        className="inline-flex items-center justify-center gap-2 text-center bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-5 rounded-xl transition-colors border border-slate-600 text-xs uppercase tracking-wider"
+                      >
+                        Reset Data
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {statistikExcelFileName && (
+                  <p className="text-[11px] text-emerald-300 mt-4">
+                    File aktif: <span className="font-semibold text-white">{statistikExcelFileName}</span> · data visual telah mengikuti hasil import.
+                  </p>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Sebaran Pegawai per Unit Kerja</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dataStatistikUnit} layout="vertical">
+                      <BarChart data={dataStatistikUnitTampil} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
                         <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                         <YAxis dataKey="unit" type="category" stroke="#94a3b8" fontSize={11} width={100} tickLine={false} axisLine={false} />
@@ -883,11 +1242,11 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Profil Berdasarkan Generasi</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dataStatistikGenerasi}>
+                      <BarChart data={dataStatistikGenerasiTampil}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                         <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                         <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
@@ -898,14 +1257,14 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Proporsi Gender Pegawai</h3>
                   <div className="h-64 flex flex-col sm:flex-row items-center justify-center gap-4">
                     <div className="w-full h-52">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={dataStatistikGender} cx="50%" cy="50%" innerRadius={45} outerRadius={80} paddingAngle={4} dataKey="value" stroke="none">
-                            {dataStatistikGender.map((entry, index) => (
+                          <Pie data={dataStatistikGenderTampil} cx="50%" cy="50%" innerRadius={45} outerRadius={80} paddingAngle={4} dataKey="value" stroke="none">
+                            {dataStatistikGenderTampil.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
                             ))}
                           </Pie>
@@ -917,13 +1276,13 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Sebaran Golongan Darah</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={dataStatistikGoldar} cx="50%" cy="50%" outerRadius={80} dataKey="value" stroke="none">
-                          {dataStatistikGoldar.map((entry, index) => (
+                        <Pie data={dataStatistikGoldarTampil} cx="50%" cy="50%" outerRadius={80} dataKey="value" stroke="none">
+                          {dataStatistikGoldarTampil.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={GOLDAR_COLORS[index % GOLDAR_COLORS.length]} />
                           ))}
                         </Pie>
@@ -936,10 +1295,10 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Tingkat Pendidikan Terakhir</h3>
                   <div className="space-y-3 text-xs">
-                    {dataStatistikPendidikan.map((p, idx) => (
+                    {dataStatistikPendidikanTampil.map((p, idx) => (
                       <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors">
                         <span className="text-slate-200 font-medium">{p.name}</span>
                         <span className="font-bold text-[#D4AF37] px-2 py-1 bg-[#D4AF37]/10 rounded-md">{p.jumlah} Pegawai</span>
@@ -948,15 +1307,38 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Struktur Eselonering / Jabatan</h3>
                   <div className="space-y-3 text-xs">
-                    {dataStatistikJabatan.map((j, idx) => (
+                    {dataStatistikJabatanTampil.map((j, idx) => (
                       <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors">
                         <span className="text-slate-200 font-medium">{j.name}</span>
                         <span className="font-bold text-blue-400 px-2 py-1 bg-blue-500/10 rounded-md">{j.jumlah} Orang</span>
                       </div>
                     ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+                  <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Klasifikasi Agama</h3>
+                  <div className="space-y-3 text-xs">
+                    {dataStatistikAgamaTampil.map((a, idx) => (
+                      <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors">
+                        <span className="text-slate-200 font-medium">{a.name}</span>
+                        <span className="font-bold text-emerald-400 px-2 py-1 bg-emerald-500/10 rounded-md">{a.jumlah} Pegawai</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+                  <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Catatan Import</h3>
+                  <div className="space-y-3 text-[11px] leading-relaxed text-slate-300">
+                    <p>• Jika belum ada file Excel, dashboard statistik tetap memakai data bawaan.</p>
+                    <p>• Setelah import, seluruh grafik dan daftar akan mengikuti isi file yang diunggah.</p>
+                    <p>• Klik <span className="text-[#D4AF37] font-semibold">Reset Data</span> untuk kembali ke data awal.</p>
                   </div>
                 </div>
               </div>
@@ -966,7 +1348,7 @@ export default function App() {
           {/* VIEW: PENGATURAN PROFIL */}
           {currentView === 'profile' && (
             <div className="p-4 max-w-2xl mx-auto w-full animate-fadeIn">
-              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-md">
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-md theme-surface">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-5">
                   <div className="p-2 bg-[#D4AF37]/10 rounded-xl">
                     <Settings className="text-[#D4AF37]" size={24} />
@@ -1040,7 +1422,7 @@ export default function App() {
         </div>
 
         {/* Footer Khusus Dashboard Internal */}
-        <footer className="bg-white border-t border-slate-200 rounded-t-[2.5rem] px-8 py-12 mt-12 shadow-[0_-10px_35px_rgba(15,23,42,0.06)]">
+        <footer className="bg-white border-t border-slate-200 rounded-t-[2.5rem] px-8 py-12 mt-12 shadow-[0_-10px_35px_rgba(15,23,42,0.06)] theme-footer">
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
