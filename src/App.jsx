@@ -307,17 +307,17 @@ export default function App() {
 
           {isRegisterMode ? (
             <form onSubmit={handleRegister} className="space-y-4 text-xs">
-              <div><label className="text-slate-600 block mb-1">Nama Lengkap</label><input type="text" value={authName} onChange={(e) => setAuthName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37] transition" required /></div>
-              <div><label className="text-slate-600 block mb-1">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37] transition" required /></div>
-              <div><label className="text-slate-600 block mb-1">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37] transition" required /></div>
+              <div><label className="text-slate-600 block mb-1">Nama Lengkap</label><input type="text" value={authName} onChange={(e) => setAuthName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-black focus:outline-none focus:border-[#D4AF37] transition" required /></div>
+              <div><label className="text-slate-600 block mb-1">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-black focus:outline-none focus:border-[#D4AF37] transition" required /></div>
+              <div><label className="text-slate-600 block mb-1">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-black focus:outline-none focus:border-[#D4AF37] transition" required /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-600 block mb-1">Akses</label>
-                  <select value={authRole} onChange={(e) => setAuthRole(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-300 focus:outline-none transition"><option value="pegawai">Pegawai</option><option value="admin">Admin</option></select>
+                  <select value={authRole} onChange={(e) => setAuthRole(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-500 focus:outline-none transition"><option value="pegawai">Pegawai</option><option value="admin">Admin</option></select>
                 </div>
                 <div>
                   <label className="text-slate-600 block mb-1">Unit Kerja</label>
-                  <select value={authUnit} onChange={(e) => setAuthUnit(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-300 focus:outline-none transition"><option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option></select>
+                  <select value={authUnit} onChange={(e) => setAuthUnit(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-500 focus:outline-none transition"><option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option></select>
                 </div>
               </div>
               <button type="submit" className="w-full bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black rounded-xl py-3.5 mt-2 flex items-center justify-center gap-2 text-sm uppercase tracking-wider hover:scale-[1.02] transition-transform shadow-lg shadow-[#D4AF37]/20"><UserPlus size={16} /> Daftar Akun</button>
@@ -325,8 +325,8 @@ export default function App() {
             </form>
           ) : (
             <form onSubmit={handleLogin} className="space-y-4 text-xs">
-              <div><label className="text-slate-600 block mb-1.5">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37] transition" required /></div>
-              <div><label className="text-slate-600 block mb-1.5">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-white focus:outline-none focus:border-[#D4AF37] transition" required /></div>
+              <div><label className="text-slate-600 block mb-1.5">Username</label><input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-black focus:outline-none focus:border-[#D4AF37] transition" required /></div>
+              <div><label className="text-slate-600 block mb-1.5">Password</label><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-black focus:outline-none focus:border-[#D4AF37] transition" required /></div>
               <button type="submit" className="w-full bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black rounded-xl py-3.5 flex items-center justify-center gap-2 text-sm uppercase tracking-wider hover:scale-[1.02] transition-transform shadow-lg shadow-[#D4AF37]/20"><Lock size={16} /> Masuk Ke Sistem</button>
               <p className="text-center text-slate-600 mt-4">Belum punya akun? <button type="button" onClick={() => setIsRegisterMode(true)} className="text-[#D4AF37] font-bold underline ml-1">Registrasi</button></p>
             </form>
@@ -884,13 +884,13 @@ export default function App() {
               <h3 className="text-sm font-black text-slate-900 tracking-widest uppercase drop-shadow-sm">Media Sosial</h3>
               <div className="flex gap-4">
                 <a href="https://www.instagram.com/djknkanwilsumut/?hl=en" target="_blank" rel="noreferrer" className="p-3 bg-slate-900 border border-slate-700 rounded-full hover:border-pink-500 hover:scale-110 transition-all duration-300 group shadow-md">
-                  <SiInstagram size={20} className="text-slate-600 group-hover:text-pink-500 transition-colors" />
+                  <SiInstagram size={20} className="text-slate-100 group-hover:text-pink-100 transition-colors" />
                 </a>
                 <a href="https://www.facebook.com/kanwildjknsumut/?locale=id_ID" target="_blank" rel="noreferrer" className="p-3 bg-slate-900 border border-slate-700 rounded-full hover:border-blue-500 hover:scale-110 transition-all duration-300 group shadow-md">
-                  <SiFacebook size={20} className="text-slate-600 group-hover:text-blue-500 transition-colors" />
+                  <SiFacebook size={20} className="text-slate-100 group-hover:text-blue-100 transition-colors" />
                 </a>
                 <a href="https://www.youtube.com/@KanwilDJKNSumut" target="_blank" rel="noreferrer" className="p-3 bg-slate-900 border border-slate-700 rounded-full hover:border-red-500 hover:scale-110 transition-all duration-300 group shadow-md">
-                  <SiYoutube size={20} className="text-slate-600 group-hover:text-red-500 transition-colors" />
+                  <SiYoutube size={20} className="text-slate-100 group-hover:text-red-100 transition-colors" />
                 </a>
               </div>
             </div>
