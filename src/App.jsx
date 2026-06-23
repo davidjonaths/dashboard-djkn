@@ -298,7 +298,7 @@ export default function App() {
                 className="h-20 w-auto object-contain mx-auto drop-shadow-[0_0_15px_rgba(212,175,55,0.15)]" 
               />
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">SIPKA</h1>
+            <h1 className="text-2xl font-black text-blue tracking-tight">SIPKA</h1>
             <p className="text-[10px] text-[#D4AF37] font-bold uppercase tracking-[0.2em] mt-1">Sistem Informasi Pemantauan Kepegawaian & Keuangan</p>
           </div>
 
@@ -861,7 +861,7 @@ export default function App() {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <img src="/SIPKA-logo.png" className="h-10 w-auto drop-shadow-md" alt="SIPKA" />
-                <h2 className="text-2xl font-black text-white tracking-tight">SIPKA</h2>
+                <h2 className="text-2xl font-black text-navy tracking-tight">SIPKA</h2>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed pr-4">
                 Sistem Informasi Pemantauan Kepegawaian & Keuangan Kanwil DJKN Sumatera Utara.
