@@ -1,9 +1,9 @@
 import * as XLSX from 'xlsx';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   LayoutDashboard, TrendingUp, Bell, User, LogOut, Home,
   ArrowUpRight, PlusCircle, PieChart as PieIcon, Lock, UserPlus, Settings, UserCheck, Users, Menu, X,
-  Shield, CheckCircle, Target, Info, MapPin, Mail, Eye, EyeOff, ArrowLeft, Sun, Moon
+  Shield, CheckCircle, Target, Info, MapPin, Mail, Eye, EyeOff, ArrowLeft, Sun, Moon, Trash2
 } from 'lucide-react';
 import { SiInstagram, SiFacebook, SiYoutube } from 'react-icons/si';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -165,6 +165,23 @@ const THEME_STYLE = `
 .theme-light [class*="text-[#D4AF37]"] {
   color: #b8860b !important;
 }
+
+/* Custom Scrollbar untuk Tabel Log Mutasi */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.1); 
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.5); 
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.8); 
+}
 `;
 
 const STATISTIK_FIELD_ALIASES = {
@@ -317,6 +334,10 @@ export default function App() {
       { id: 2, date: '14/06/2026', uraian: 'Biaya Adminstrasi Lelang Pengadilan', akun: '425111', bidang: 'Lelang', jumlah: 45200000, tipe: 'masuk' },
     ];
   });
+  const [selectedTransaksi, setSelectedTransaksi] = useState([]);
+  const selectAllTransaksiRef = useRef(null);
+  const isAllTransaksiSelected = transaksi.length > 0 && selectedTransaksi.length === transaksi.length;
+  const isSomeTransaksiSelected = selectedTransaksi.length > 0 && selectedTransaksi.length < transaksi.length;
 
   // --- LOGIKA AUTOKALKULASI DATA EXCEL (useMemo) ---
   const totalRealisasi = useMemo(() => {
@@ -369,6 +390,16 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('djkn_transaksi', JSON.stringify(transaksi));
   }, [transaksi]);
+
+  useEffect(() => {
+    setSelectedTransaksi((prev) => prev.filter((id) => transaksi.some((t) => t.id === id)));
+  }, [transaksi]);
+
+  useEffect(() => {
+    if (selectAllTransaksiRef.current) {
+      selectAllTransaksiRef.current.indeterminate = isSomeTransaksiSelected;
+    }
+  }, [isSomeTransaksiSelected]);
 
   const [uraianInput, setUraianInput] = useState('');
   const [nominalInput, setNominalInput] = useState('');
@@ -489,7 +520,44 @@ export default function App() {
     setNominalInput('');
   };
 
-  // --- FUNGSI IMPORT EXCEL ---
+  // --- [BARU] FUNGSI HAPUS TRANSAKSI ---
+  const handleHapusTransaksi = (id) => {
+    if (typeof id === 'number') {
+      if (window.confirm("Apakah kamu yakin ingin menghapus data ini?")) {
+        setTransaksi((prev) => prev.filter(t => t.id !== id));
+        setSelectedTransaksi((prev) => prev.filter(itemId => itemId !== id));
+      }
+      return;
+    }
+
+    if (selectedTransaksi.length === 0) return;
+
+    const totalHapus = selectedTransaksi.length;
+    const konfirmasi = window.confirm(
+      `Apakah kamu yakin ingin menghapus ${totalHapus} data terpilih?`
+    );
+
+    if (konfirmasi) {
+      setTransaksi((prev) => prev.filter(t => !selectedTransaksi.includes(t.id)));
+      setSelectedTransaksi([]);
+    }
+  };
+
+  const handleToggleTransaksiSelect = (id) => {
+    setSelectedTransaksi((prev) => 
+      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllTransaksi = () => {
+    if (selectedTransaksi.length === transaksi.length) {
+      setSelectedTransaksi([]);
+    } else {
+      setSelectedTransaksi(transaksi.map((t) => t.id));
+    }
+  };
+
+  // --- [DIPERBARUI] FUNGSI IMPORT EXCEL SUPER ROBUST ---
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -501,22 +569,79 @@ export default function App() {
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
         
-        const dataBaru = data.map(item => ({
-          id: Date.now() + Math.random(),
-          date: item.tanggal || new Date().toLocaleDateString('id-ID'),
-          uraian: item.uraian || "Data Import",
-          akun: item.akun || "425111",
-          bidang: item.bidang || "Bagian Umum",
-          jumlah: parseFloat(item.jumlah) || 0,
-          tipe: item.tipe || "keluar"
-        }));
+        // Membaca raw data
+        const rawData = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        
+        const dataBaru = rawData.map(item => {
+          // Normalisasi key agar fleksibel dibaca
+          const normalized = {};
+          Object.keys(item).forEach(key => {
+            const cleanKey = key.trim().toLowerCase();
+            normalized[cleanKey] = item[key];
+          });
 
+          // Fungsi pencari nilai berdasarkan alias
+          const getVal = (aliases) => {
+            for (let key of aliases) {
+              if (normalized[key] !== undefined && normalized[key] !== "") {
+                return normalized[key];
+              }
+            }
+            return null;
+          };
+
+          // Ambil data mentah dari berbagai kemungkinan nama kolom
+          const rawTanggal = getVal(['tanggal', 'tgl', 'date', 'waktu', 'hari']) || new Date().toLocaleDateString('id-ID');
+          const rawUraian = getVal(['uraian', 'keterangan', 'deskripsi', 'nama', 'transaksi', 'rincian']) || "Data Import";
+          const rawAkun = getVal(['akun', 'kode', 'rekening', 'kode_akun']) || "521111";
+          const rawBidang = getVal(['bidang', 'unit', 'bagian', 'seksi']) || "Bagian Umum";
+          const rawJumlah = getVal(['jumlah', 'nominal', 'total', 'harga', 'rp', 'saldo', 'nilai', 'pengeluaran', 'pemasukan']) || 0;
+          const rawTipe = getVal(['tipe', 'jenis', 'status', 'arus']);
+
+          // Olah Tanggal (Jika excel mengirim dalam format serial number)
+          let parsedTanggal = rawTanggal;
+          if (typeof rawTanggal === 'number') {
+            const dateObj = new Date(Math.round((rawTanggal - 25569) * 86400 * 1000));
+            parsedTanggal = dateObj.toLocaleDateString('id-ID');
+          }
+
+          // Olah Nominal Jumlah & Filter Tipe (Membaca Tanda Minus / Plus)
+          const stringJumlah = String(rawJumlah);
+          const bersihkanAngka = stringJumlah.replace(/[^0-9]/g, ''); // Hapus semua titik, spasi, koma, minus, plus
+          const parsedJumlah = parseFloat(bersihkanAngka) || 0;
+
+          let tipeTrans = "keluar"; // Default
+          if (rawTipe) {
+             tipeTrans = String(rawTipe).toLowerCase().includes('masuk') ? 'masuk' : 'keluar';
+          } else {
+             // Deteksi otomatis jika ada tanda minus (-) atau plus (+) di kolom nominal/jumlah
+             if (stringJumlah.includes('+')) {
+               tipeTrans = 'masuk';
+             } else if (stringJumlah.includes('-')) {
+               tipeTrans = 'keluar';
+             }
+          }
+
+          return {
+            id: Date.now() + Math.random(),
+            date: parsedTanggal,
+            uraian: String(rawUraian),
+            akun: String(rawAkun),
+            bidang: String(rawBidang),
+            jumlah: parsedJumlah, // Hanya masuk angka bulat yang siap dikalkulasi grafik
+            tipe: tipeTrans
+          };
+        });
+
+        // Gabungkan data import baru ke data lama
         setTransaksi([...dataBaru, ...transaksi]);
-        alert(`Berhasil mengimpor ${dataBaru.length} data!`);
+        alert(`Berhasil mengimpor ${dataBaru.length} data dengan sempurna!`);
       } catch (error) {
-        alert("Gagal membaca file. Pastikan format Excel sesuai.");
+        console.error(error);
+        alert("Gagal membaca file. Pastikan format Excel Anda benar.");
+      } finally {
+        e.target.value = ''; // Reset uploader
       }
     };
     reader.readAsBinaryString(file);
@@ -1160,33 +1285,113 @@ export default function App() {
                           Import Excel
                         </label>
                       </div>
+                      <p className="text-[11px] text-slate-300 mt-3 leading-relaxed">
+                        Format Excel yang didukung: <span className="text-[#D4AF37] font-semibold">tanggal/tgl/date</span>, <span className="text-[#D4AF37] font-semibold">uraian/keterangan/deskripsi</span>, <span className="text-[#D4AF37] font-semibold">akun/kode/rekening</span>, <span className="text-[#D4AF37] font-semibold">bidang/unit/bagian</span>, <span className="text-[#D4AF37] font-semibold">jumlah/nominal</span>, dan <span className="text-[#D4AF37] font-semibold">tipe/jenis/status</span>.
+                      </p>
                     </form>
                   </div>
                 )}
 
                 <div className={`bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light ${sessionUser?.role === 'admin' ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
-                  <h3 className="text-xs font-black text-white mb-5 tracking-widest uppercase">Log Mutasi Anggaran Terkini</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
+                  <div className="flex flex-col gap-3 mb-5">
+                    <h3 className="text-xs font-black text-white tracking-widest uppercase">Log Mutasi Anggaran Terkini</h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        Gunakan checkbox untuk memilih satu atau banyak data, lalu hapus sekaligus agar proses lebih cepat.
+                      </p>
+                      {sessionUser?.role === 'admin' && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[11px] text-slate-300 font-medium px-3 py-2 rounded-xl bg-slate-900/30 border border-slate-700/50">
+                            {selectedTransaksi.length} dipilih
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleSelectAllTransaksi}
+                            className="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-slate-600 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              ref={selectAllTransaksiRef}
+                              checked={isAllTransaksiSelected}
+                              readOnly
+                              className="h-4 w-4 accent-[#D4AF37]"
+                            />
+                            Select All
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleHapusTransaksi()}
+                            disabled={selectedTransaksi.length === 0}
+                            className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-rose-400/40 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                            Hapus Terpilih
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* KONTAINER SCROLL UNTUK TABEL */}
+                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                    <table className="w-full text-left text-xs border-collapse relative">
+                      <thead className="sticky top-0 bg-[#0f172a]/95 backdrop-blur-sm z-10">
                         <tr className="border-b border-slate-700 text-slate-300">
-                          <th className="py-3 font-bold">Tanggal</th>
-                          <th className="py-3 font-bold">Uraian</th>
-                          <th className="py-3 font-bold">Bidang</th>
-                          <th className="py-3 font-bold text-right">Jumlah (Rp)</th>
+                          {sessionUser?.role === 'admin' && (
+                            <th className="py-3 px-2 font-bold text-center w-12">
+                              <span className="sr-only">Select</span>
+                            </th>
+                          )}
+                          <th className="py-3 px-2 font-bold">Tanggal</th>
+                          <th className="py-3 px-2 font-bold">Uraian</th>
+                          <th className="py-3 px-2 font-bold">Bidang</th>
+                          <th className="py-3 px-2 font-bold text-right">Jumlah (Rp)</th>
+                          <th className="py-3 px-2 font-bold text-center">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-700/50">
-                        {transaksi.map((t) => (
-                          <tr key={t.id} className="hover:bg-slate-800/40 text-slate-200 transition-colors">
-                            <td className="py-3.5 whitespace-nowrap">{t.date}</td>
-                            <td className="py-3.5 max-w-xs truncate pr-4">{t.uraian}</td>
-                            <td className="py-3.5"><span className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-600 text-[10px] font-semibold">{t.bidang}</span></td>
-                            <td className={`py-3.5 text-right font-bold ${t.tipe === 'masuk' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                              {t.tipe === 'masuk' ? '+' : '-'} {t.jumlah.toLocaleString('id-ID')}
-                            </td>
+                        {transaksi.map((t) => {
+                          const isSelected = selectedTransaksi.includes(t.id);
+                          return (
+                            <tr key={t.id} className={`hover:bg-slate-800/40 text-slate-200 transition-colors ${isSelected ? 'bg-slate-800/60' : ''}`}>
+                              {sessionUser?.role === 'admin' && (
+                                <td className="py-3.5 px-2 text-center align-middle">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleToggleTransaksiSelect(t.id)}
+                                    className="h-4 w-4 accent-[#D4AF37] cursor-pointer"
+                                  />
+                                </td>
+                              )}
+                              <td className="py-3.5 px-2 whitespace-nowrap">{t.date}</td>
+                              <td className="py-3.5 px-2 max-w-xs truncate pr-4">{t.uraian}</td>
+                              <td className="py-3.5 px-2">
+                                <span className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-600 text-[10px] font-semibold">{t.bidang}</span>
+                              </td>
+                              <td className={`py-3.5 px-2 text-right font-bold ${t.tipe === 'masuk' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {t.tipe === 'masuk' ? '+' : '-'} {t.jumlah.toLocaleString('id-ID')}
+                              </td>
+                              <td className="py-3.5 px-2 text-center">
+                                {sessionUser?.role === 'admin' && (
+                                  <button 
+                                    onClick={() => handleHapusTransaksi(t.id)}
+                                    title="Hapus Data"
+                                    className="text-rose-500 hover:text-white bg-rose-500/10 hover:bg-rose-500 border border-rose-500/50 p-1.5 rounded-md transition-colors inline-flex items-center justify-center"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {transaksi.length === 0 && (
+                          <tr>
+                            <td colSpan={sessionUser?.role === 'admin' ? 6 : 5} className="py-8 text-center text-slate-500 font-medium">Belum ada log mutasi.</td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
