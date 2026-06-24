@@ -69,42 +69,42 @@ const dataStatistikAgama = [
 const GENDER_COLORS = ['#1E3A8A', '#D4AF37'];
 const GOLDAR_COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B'];
 
+
 const THEME_STYLE = `
+:root {
+  --sipka-light-bg: #f4f7fb;
+  --sipka-light-bg-alt: #ffffff;
+  --sipka-light-surface: #ffffff;
+  --sipka-light-surface-alt: #f8fbff;
+  --sipka-light-text: #0f172a;
+  --sipka-light-text-2: #334155;
+  --sipka-light-muted: #64748b;
+  --sipka-light-border: #dbe3f0;
+  --sipka-light-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --sipka-dark-bg: #0f172a;
+  --sipka-dark-surface: #132f55;
+  --sipka-dark-text: #e2e8f0;
+  --sipka-dark-muted: #94a3b8;
+  --sipka-gold: #D4AF37;
+}
+
 .theme-light {
-  color: #0f172a;
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 54%, #eef4ff 100%) !important;
+  color: var(--sipka-light-text) !important;
+  background: linear-gradient(135deg, var(--sipka-light-bg) 0%, var(--sipka-light-bg-alt) 50%, #edf4ff 100%) !important;
 }
 
-.theme-light .theme-text-primary,
-.theme-light .text-white,
-.theme-light .text-slate-900,
-.theme-light .text-slate-800 {
-  color: #0f172a !important;
+.theme-light .theme-root,
+.theme-light .theme-landing-root,
+.theme-light .theme-dashboard-root {
+  background: linear-gradient(135deg, var(--sipka-light-bg) 0%, var(--sipka-light-bg-alt) 50%, #edf4ff 100%) !important;
+  color: var(--sipka-light-text) !important;
 }
 
-.theme-light .theme-text-secondary,
-.theme-light .text-slate-300,
-.theme-light .text-slate-400,
-.theme-light .text-slate-500,
-.theme-light .text-slate-600,
-.theme-light .text-slate-700 {
-  color: #475569 !important;
-}
-
-.theme-light .theme-text-muted {
-  color: #64748b !important;
-}
-
-.theme-light .theme-border,
-.theme-light .border-slate-200,
-.theme-light .border-slate-700,
-.theme-light .border-slate-800,
-.theme-light .border-slate-900 {
-  border-color: #dbe3f0 !important;
-}
-
-.theme-light .theme-root {
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 54%, #eef4ff 100%) !important;
+.theme-light .theme-landing-hero,
+.theme-light .theme-landing-section,
+.theme-light .theme-dashboard-main {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 55%, #edf4ff 100%) !important;
+  color: var(--sipka-light-text) !important;
 }
 
 .theme-light .theme-landing-nav,
@@ -114,44 +114,378 @@ const THEME_STYLE = `
 .theme-light .theme-sidebar-header,
 .theme-light .theme-footer,
 .theme-light .theme-card-light,
-.theme-light .theme-panel-light {
-  background-color: rgba(255, 255, 255, 0.96) !important;
-  border-color: #dbe3f0 !important;
+.theme-light .theme-panel-light,
+.theme-light .theme-log-card,
+.theme-light .theme-summary-card,
+.theme-light .theme-import-card,
+.theme-light .theme-stat-item,
+.theme-light .theme-log-row {
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.98) 100%) !important;
+  border-color: var(--sipka-light-border) !important;
+  box-shadow: var(--sipka-light-shadow) !important;
+  color: var(--sipka-light-text) !important;
 }
 
 .theme-light .theme-landing-menu {
-  background-color: rgba(255, 255, 255, 0.98) !important;
-  border-color: #dbe3f0 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: var(--sipka-light-border) !important;
+  box-shadow: var(--sipka-light-shadow) !important;
 }
 
 .theme-light .theme-hero-glow {
-  background: radial-gradient(circle, rgba(212,175,55,0.16), rgba(212,175,55,0.05) 48%, transparent 72%) !important;
+  background: radial-gradient(circle, rgba(212,175,55,0.14), rgba(212,175,55,0.06) 48%, transparent 72%) !important;
 }
 
-.theme-light [class*="bg-slate-900/40"],
-.theme-light [class*="bg-slate-800/30"],
-.theme-light [class*="bg-slate-800/40"],
-.theme-light [class*="bg-slate-800/50"],
-.theme-light [class*="bg-slate-800/60"],
-.theme-light [class*="bg-slate-700/40"],
-.theme-light [class*="bg-slate-700/50"],
-.theme-light [class*="bg-slate-700/60"] {
-  background-color: rgba(255, 255, 255, 0.96) !important;
-  border-color: #dbe3f0 !important;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08) !important;
+.theme-light .theme-panel-light h1,
+.theme-light .theme-panel-light h2,
+.theme-light .theme-panel-light h3,
+.theme-light .theme-panel-light h4,
+.theme-light .theme-panel-light h5,
+.theme-light .theme-panel-light p,
+.theme-light .theme-panel-light span,
+.theme-light .theme-panel-light label,
+.theme-light .theme-panel-light td,
+.theme-light .theme-panel-light th,
+.theme-light .theme-panel-light div,
+.theme-light .theme-card-light h1,
+.theme-light .theme-card-light h2,
+.theme-light .theme-card-light h3,
+.theme-light .theme-card-light h4,
+.theme-light .theme-card-light h5,
+.theme-light .theme-card-light p,
+.theme-light .theme-card-light span,
+.theme-light .theme-card-light label,
+.theme-light .theme-card-light td,
+.theme-light .theme-card-light th,
+.theme-light .theme-card-light div,
+.theme-light .theme-surface h1,
+.theme-light .theme-surface h2,
+.theme-light .theme-surface h3,
+.theme-light .theme-surface h4,
+.theme-light .theme-surface h5,
+.theme-light .theme-surface p,
+.theme-light .theme-surface span,
+.theme-light .theme-surface label,
+.theme-light .theme-surface td,
+.theme-light .theme-surface th,
+.theme-light .theme-surface div,
+.theme-light .theme-log-card h1,
+.theme-light .theme-log-card h2,
+.theme-light .theme-log-card h3,
+.theme-light .theme-log-card h4,
+.theme-light .theme-log-card h5,
+.theme-light .theme-log-card p,
+.theme-light .theme-log-card span,
+.theme-light .theme-log-card label,
+.theme-light .theme-log-card td,
+.theme-light .theme-log-card th,
+.theme-light .theme-log-card div,
+.theme-light .theme-stat-item h1,
+.theme-light .theme-stat-item h2,
+.theme-light .theme-stat-item h3,
+.theme-light .theme-stat-item h4,
+.theme-light .theme-stat-item h5,
+.theme-light .theme-stat-item p,
+.theme-light .theme-stat-item span,
+.theme-light .theme-stat-item label,
+.theme-light .theme-stat-item td,
+.theme-light .theme-stat-item th,
+.theme-light .theme-stat-item div,
+.theme-light .theme-summary-card h1,
+.theme-light .theme-summary-card h2,
+.theme-light .theme-summary-card h3,
+.theme-light .theme-summary-card h4,
+.theme-light .theme-summary-card h5,
+.theme-light .theme-summary-card p,
+.theme-light .theme-summary-card span,
+.theme-light .theme-summary-card label,
+.theme-light .theme-summary-card td,
+.theme-light .theme-summary-card th,
+.theme-light .theme-summary-card div,
+.theme-light .theme-import-card h1,
+.theme-light .theme-import-card h2,
+.theme-light .theme-import-card h3,
+.theme-light .theme-import-card h4,
+.theme-light .theme-import-card h5,
+.theme-light .theme-import-card p,
+.theme-light .theme-import-card span,
+.theme-light .theme-import-card label,
+.theme-light .theme-import-card td,
+.theme-light .theme-import-card th,
+.theme-light .theme-import-card div {
+  color: var(--sipka-light-text) !important;
+}
+
+.theme-light .theme-panel-light .text-white,
+.theme-light .theme-card-light .text-white,
+.theme-light .theme-surface .text-white,
+.theme-light .theme-log-card .text-white,
+.theme-light .theme-log-row .text-white,
+.theme-light .theme-stat-item .text-white,
+.theme-light .theme-summary-card .text-white,
+.theme-light .theme-import-card .text-white,
+.theme-light .theme-panel-light .text-slate-100,
+.theme-light .theme-card-light .text-slate-100,
+.theme-light .theme-surface .text-slate-100,
+.theme-light .theme-log-card .text-slate-100,
+.theme-light .theme-log-row .text-slate-100,
+.theme-light .theme-stat-item .text-slate-100,
+.theme-light .theme-summary-card .text-slate-100,
+.theme-light .theme-import-card .text-slate-100,
+.theme-light .theme-panel-light .text-slate-200,
+.theme-light .theme-card-light .text-slate-200,
+.theme-light .theme-surface .text-slate-200,
+.theme-light .theme-log-card .text-slate-200,
+.theme-light .theme-log-row .text-slate-200,
+.theme-light .theme-stat-item .text-slate-200,
+.theme-light .theme-summary-card .text-slate-200,
+.theme-light .theme-import-card .text-slate-200,
+.theme-light .theme-panel-light .text-slate-300,
+.theme-light .theme-card-light .text-slate-300,
+.theme-light .theme-surface .text-slate-300,
+.theme-light .theme-log-card .text-slate-300,
+.theme-light .theme-log-row .text-slate-300,
+.theme-light .theme-stat-item .text-slate-300,
+.theme-light .theme-summary-card .text-slate-300,
+.theme-light .theme-import-card .text-slate-300,
+.theme-light .theme-panel-light .text-slate-400,
+.theme-light .theme-card-light .text-slate-400,
+.theme-light .theme-surface .text-slate-400,
+.theme-light .theme-log-card .text-slate-400,
+.theme-light .theme-log-row .text-slate-400,
+.theme-light .theme-stat-item .text-slate-400,
+.theme-light .theme-summary-card .text-slate-400,
+.theme-light .theme-import-card .text-slate-400,
+.theme-light .theme-panel-light .text-slate-500,
+.theme-light .theme-card-light .text-slate-500,
+.theme-light .theme-surface .text-slate-500,
+.theme-light .theme-log-card .text-slate-500,
+.theme-light .theme-log-row .text-slate-500,
+.theme-light .theme-stat-item .text-slate-500,
+.theme-light .theme-summary-card .text-slate-500,
+.theme-light .theme-import-card .text-slate-500,
+.theme-light .theme-panel-light .text-slate-600,
+.theme-light .theme-card-light .text-slate-600,
+.theme-light .theme-surface .text-slate-600,
+.theme-light .theme-log-card .text-slate-600,
+.theme-light .theme-log-row .text-slate-600,
+.theme-light .theme-stat-item .text-slate-600,
+.theme-light .theme-summary-card .text-slate-600,
+.theme-light .theme-import-card .text-slate-600,
+.theme-light .theme-panel-light .text-slate-700,
+.theme-light .theme-card-light .text-slate-700,
+.theme-light .theme-surface .text-slate-700,
+.theme-light .theme-log-card .text-slate-700,
+.theme-light .theme-log-row .text-slate-700,
+.theme-light .theme-stat-item .text-slate-700,
+.theme-light .theme-summary-card .text-slate-700,
+.theme-light .theme-import-card .text-slate-700,
+.theme-light .theme-panel-light .text-slate-800,
+.theme-light .theme-card-light .text-slate-800,
+.theme-light .theme-surface .text-slate-800,
+.theme-light .theme-log-card .text-slate-800,
+.theme-light .theme-log-row .text-slate-800,
+.theme-light .theme-stat-item .text-slate-800,
+.theme-light .theme-summary-card .text-slate-800,
+.theme-light .theme-import-card .text-slate-800,
+.theme-light .theme-panel-light .text-slate-900,
+.theme-light .theme-card-light .text-slate-900,
+.theme-light .theme-surface .text-slate-900,
+.theme-light .theme-log-card .text-slate-900,
+.theme-light .theme-log-row .text-slate-900,
+.theme-light .theme-stat-item .text-slate-900,
+.theme-light .theme-summary-card .text-slate-900,
+.theme-light .theme-import-card .text-slate-900 {
+  color: var(--sipka-light-text) !important;
+}
+
+.theme-light .theme-panel-light .text-[#D4AF37],
+.theme-light .theme-card-light .text-[#D4AF37],
+.theme-light .theme-surface .text-[#D4AF37],
+.theme-light .theme-log-card .text-[#D4AF37],
+.theme-light .theme-log-row .text-[#D4AF37],
+.theme-light .theme-stat-item .text-[#D4AF37],
+.theme-light .theme-summary-card .text-[#D4AF37],
+.theme-light .theme-import-card .text-[#D4AF37] {
+  color: #b8860b !important;
+}
+
+.theme-light .theme-panel-light [class*="bg-slate-900/40"],
+.theme-light .theme-panel-light [class*="bg-slate-800/30"],
+.theme-light .theme-panel-light [class*="bg-slate-800/40"],
+.theme-light .theme-panel-light [class*="bg-slate-800/50"],
+.theme-light .theme-panel-light [class*="bg-slate-800/60"],
+.theme-light .theme-panel-light [class*="bg-slate-700/40"],
+.theme-light .theme-panel-light [class*="bg-slate-700/50"],
+.theme-light .theme-panel-light [class*="bg-slate-700/60"],
+.theme-light .theme-card-light [class*="bg-slate-900/40"],
+.theme-light .theme-card-light [class*="bg-slate-800/30"],
+.theme-light .theme-card-light [class*="bg-slate-800/40"],
+.theme-light .theme-card-light [class*="bg-slate-800/50"],
+.theme-light .theme-card-light [class*="bg-slate-800/60"],
+.theme-light .theme-card-light [class*="bg-slate-700/40"],
+.theme-light .theme-card-light [class*="bg-slate-700/50"],
+.theme-light .theme-card-light [class*="bg-slate-700/60"],
+.theme-light .theme-surface [class*="bg-slate-900/40"],
+.theme-light .theme-surface [class*="bg-slate-800/30"],
+.theme-light .theme-surface [class*="bg-slate-800/40"],
+.theme-light .theme-surface [class*="bg-slate-800/50"],
+.theme-light .theme-surface [class*="bg-slate-800/60"],
+.theme-light .theme-surface [class*="bg-slate-700/40"],
+.theme-light .theme-surface [class*="bg-slate-700/50"],
+.theme-light .theme-surface [class*="bg-slate-700/60"],
+.theme-light .theme-log-card [class*="bg-slate-900/40"],
+.theme-light .theme-log-card [class*="bg-slate-800/30"],
+.theme-light .theme-log-card [class*="bg-slate-800/40"],
+.theme-light .theme-log-card [class*="bg-slate-800/50"],
+.theme-light .theme-log-card [class*="bg-slate-800/60"],
+.theme-light .theme-log-card [class*="bg-slate-700/40"],
+.theme-light .theme-log-card [class*="bg-slate-700/50"],
+.theme-light .theme-log-card [class*="bg-slate-700/60"],
+.theme-light .theme-stat-item [class*="bg-slate-900/40"],
+.theme-light .theme-stat-item [class*="bg-slate-800/30"],
+.theme-light .theme-stat-item [class*="bg-slate-800/40"],
+.theme-light .theme-stat-item [class*="bg-slate-800/50"],
+.theme-light .theme-stat-item [class*="bg-slate-800/60"],
+.theme-light .theme-stat-item [class*="bg-slate-700/40"],
+.theme-light .theme-stat-item [class*="bg-slate-700/50"],
+.theme-light .theme-stat-item [class*="bg-slate-700/60"],
+.theme-light .theme-summary-card [class*="bg-slate-900/40"],
+.theme-light .theme-summary-card [class*="bg-slate-800/30"],
+.theme-light .theme-summary-card [class*="bg-slate-800/40"],
+.theme-light .theme-summary-card [class*="bg-slate-800/50"],
+.theme-light .theme-summary-card [class*="bg-slate-800/60"],
+.theme-light .theme-summary-card [class*="bg-slate-700/40"],
+.theme-light .theme-summary-card [class*="bg-slate-700/50"],
+.theme-light .theme-summary-card [class*="bg-slate-700/60"],
+.theme-light .theme-import-card [class*="bg-slate-900/40"],
+.theme-light .theme-import-card [class*="bg-slate-800/30"],
+.theme-light .theme-import-card [class*="bg-slate-800/40"],
+.theme-light .theme-import-card [class*="bg-slate-800/50"],
+.theme-light .theme-import-card [class*="bg-slate-800/60"],
+.theme-light .theme-import-card [class*="bg-slate-700/40"],
+.theme-light .theme-import-card [class*="bg-slate-700/50"],
+.theme-light .theme-import-card [class*="bg-slate-700/60"] {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+  border-color: var(--sipka-light-border) !important;
+  box-shadow: var(--sipka-light-shadow) !important;
+}
+
+.theme-light .theme-log-card table thead tr,
+.theme-light .theme-panel-light table thead tr,
+.theme-light .theme-card-light table thead tr,
+.theme-light .theme-surface table thead tr {
+  background: #edf4ff !important;
+}
+
+.theme-light .theme-log-card table thead th,
+.theme-light .theme-panel-light table thead th,
+.theme-light .theme-card-light table thead th,
+.theme-light .theme-surface table thead th {
+  color: var(--sipka-light-text) !important;
+  background: #edf4ff !important;
+  border-color: var(--sipka-light-border) !important;
+}
+
+.theme-light .theme-log-card table tbody tr,
+.theme-light .theme-panel-light table tbody tr,
+.theme-light .theme-card-light table tbody tr,
+.theme-light .theme-surface table tbody tr {
+  background: rgba(255,255,255,0.98) !important;
+  border-color: var(--sipka-light-border) !important;
+}
+
+.theme-light .theme-log-card table tbody td,
+.theme-light .theme-panel-light table tbody td,
+.theme-light .theme-card-light table tbody td,
+.theme-light .theme-surface table tbody td,
+.theme-light .theme-log-row td {
+  color: var(--sipka-light-text) !important;
+}
+
+.theme-light .theme-log-row {
+  background: rgba(255,255,255,0.98) !important;
+  border-color: var(--sipka-light-border) !important;
+}
+
+.theme-light .theme-log-row:hover {
+  background: #f8fbff !important;
+}
+
+.theme-light .theme-stat-item {
+  background: rgba(255,255,255,0.98) !important;
+  border-color: var(--sipka-light-border) !important;
+  color: var(--sipka-light-text) !important;
+}
+
+.theme-light .theme-stat-item .text-slate-200,
+.theme-light .theme-stat-item .text-slate-300,
+.theme-light .theme-stat-item .text-slate-400 {
+  color: var(--sipka-light-text) !important;
+}
+
+.theme-light .theme-stat-item .text-blue-400,
+.theme-light .theme-stat-item .text-emerald-400 {
+  color: #b8860b !important;
+}
+
+.theme-light .theme-panel-light input,
+.theme-light .theme-panel-light select,
+.theme-light .theme-panel-light textarea,
+.theme-light .theme-card-light input,
+.theme-light .theme-card-light select,
+.theme-light .theme-card-light textarea,
+.theme-light .theme-surface input,
+.theme-light .theme-surface select,
+.theme-light .theme-surface textarea,
+.theme-light .theme-log-card input,
+.theme-light .theme-log-card select,
+.theme-light .theme-log-card textarea,
+.theme-light .theme-import-card input,
+.theme-light .theme-import-card select,
+.theme-light .theme-import-card textarea {
+  background: #ffffff !important;
+  color: var(--sipka-light-text) !important;
+  border-color: var(--sipka-light-border) !important;
+}
+
+.theme-light .theme-panel-light ::placeholder,
+.theme-light .theme-card-light ::placeholder,
+.theme-light .theme-surface ::placeholder,
+.theme-light .theme-log-card ::placeholder,
+.theme-light .theme-import-card ::placeholder {
+  color: #94a3b8 !important;
+}
+
+.theme-light .theme-dashboard-top,
+.theme-light .theme-sidebar-header,
+.theme-light .theme-sidebar,
+.theme-light .theme-footer,
+.theme-light .theme-landing-nav {
+  backdrop-filter: blur(12px);
+}
+
+.theme-light .theme-sidebar {
+  background: rgba(255,255,255,0.98) !important;
+}
+
+.theme-light .theme-landing-menu {
+  color: var(--sipka-light-text) !important;
 }
 
 .theme-light [class*="from-[#17375f] via-[#1d4f86] to-[#132f55]"] {
-  background-image: linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #eef4ff 100%) !important;
-  border-color: #dbe3f0 !important;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.98) 100%) !important;
+  border-color: var(--sipka-light-border) !important;
+  box-shadow: var(--sipka-light-shadow) !important;
+  color: var(--sipka-light-text) !important;
 }
 
 .theme-light [class*="bg-[#0f172a]/90"],
 .theme-light [class*="bg-[#0b1724]"],
 .theme-light [class*="bg-[#020617]"] {
-  background-color: rgba(255, 255, 255, 0.98) !important;
-  border-color: #dbe3f0 !important;
+  background-color: rgba(255,255,255,0.98) !important;
+  color: var(--sipka-light-text) !important;
+  border-color: var(--sipka-light-border) !important;
 }
 
 .theme-light [class*="bg-gradient-to-br from-[#0f172a] via-[#0b1724] to-[#020617]"] {
@@ -160,10 +494,6 @@ const THEME_STYLE = `
 
 .theme-light [class*="bg-white"] {
   background-color: rgba(255, 255, 255, 0.98) !important;
-}
-
-.theme-light [class*="text-[#D4AF37]"] {
-  color: #b8860b !important;
 }
 
 /* Custom Scrollbar untuk Tabel Log Mutasi */
@@ -183,6 +513,7 @@ const THEME_STYLE = `
   background: rgba(212, 175, 55, 0.8); 
 }
 `;
+
 
 const STATISTIK_FIELD_ALIASES = {
   unit: ['unit', 'bagian', 'bidang', 'seksi', 'departemen', 'department', 'office'],
@@ -1183,17 +1514,17 @@ export default function App() {
           {currentView === 'dashboard' && (
             <div className="space-y-6 animate-fadeIn">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light theme-summary-card">
                   <div className="text-slate-300 text-xs font-medium">Total Realisasi</div>
                   <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">Rp {totalRealisasi} Miliar</div>
                   <div className="text-[10px] text-emerald-400 mt-2 flex items-center gap-1 font-semibold"><TrendingUp size={12}/> Berdasarkan log mutasi</div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light theme-summary-card">
                   <div className="text-slate-300 text-xs font-medium">Jumlah Transaksi</div>
                   <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">{transaksi.length} Berkas</div>
                   <div className="text-[10px] text-white mt-2 font-medium">Tercatat di sistem lokal</div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light theme-summary-card">
                   <div className="text-slate-300 text-xs font-medium">Status Anggaran</div>
                   <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">Optimal</div>
                   <div className="text-[10px] text-white mt-2 font-medium">Sesuai dengan pagu DIPA</div>
@@ -1201,7 +1532,7 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light theme-summary-card">
                   <h3 className="text-xs font-black text-white mb-5 tracking-widest uppercase">Tren Realisasi Anggaran (Jutaan Rp)</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1216,7 +1547,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light theme-summary-card">
                   <h3 className="text-xs font-black text-white mb-5 tracking-widest uppercase">Alokasi Per Bidang (Miliar Rp)</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1238,7 +1569,7 @@ export default function App() {
 
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {sessionUser?.role === 'admin' && (
-                  <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl h-fit theme-panel-light">
+                  <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl h-fit theme-panel-light theme-import-card">
                     <h3 className="text-xs font-black text-white mb-5 flex items-center gap-2">
                       <PlusCircle size={16} className="text-[#D4AF37]" /> TAMBAH TRANSAKSI BARU
                     </h3>
@@ -1354,7 +1685,7 @@ export default function App() {
                         {transaksi.map((t) => {
                           const isSelected = selectedTransaksi.includes(t.id);
                           return (
-                            <tr key={t.id} className={`hover:bg-slate-800/40 text-slate-200 transition-colors ${isSelected ? 'bg-slate-800/60' : ''}`}>
+                            <tr key={t.id} className={`hover:bg-slate-800/40 text-slate-200 transition-colors theme-log-row ${isSelected ? 'bg-slate-800/60' : ''}`}>
                               {sessionUser?.role === 'admin' && (
                                 <td className="py-3.5 px-2 text-center align-middle">
                                   <input
@@ -1403,7 +1734,7 @@ export default function App() {
           {/* VIEW: STATISTIK PEGAWAI */}
           {currentView === 'statistik' && (
             <div className="space-y-6 animate-fadeIn">
-              <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+              <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light theme-summary-card">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div>
                     <h3 className="text-xs font-black text-white uppercase tracking-widest">Import Data Excel Pegawai</h3>
@@ -1440,7 +1771,7 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light theme-summary-card">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Sebaran Pegawai per Unit Kerja</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1455,7 +1786,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light theme-summary-card">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Profil Berdasarkan Generasi</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1470,7 +1801,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light theme-summary-card">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Proporsi Gender Pegawai</h3>
                   <div className="h-64 flex flex-col sm:flex-row items-center justify-center gap-4">
                     <div className="w-full h-52">
@@ -1489,7 +1820,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light theme-summary-card">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Sebaran Golongan Darah</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1508,11 +1839,11 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light theme-log-card">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Tingkat Pendidikan Terakhir</h3>
                   <div className="space-y-3 text-xs">
                     {dataStatistikPendidikanTampil.map((p, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors">
+                      <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors theme-stat-item">
                         <span className="text-slate-200 font-medium">{p.name}</span>
                         <span className="font-bold text-[#D4AF37] px-2 py-1 bg-[#D4AF37]/10 rounded-md">{p.jumlah} Pegawai</span>
                       </div>
@@ -1520,11 +1851,11 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light theme-log-card">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Struktur Eselonering / Jabatan</h3>
                   <div className="space-y-3 text-xs">
                     {dataStatistikJabatanTampil.map((j, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors">
+                      <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors theme-stat-item">
                         <span className="text-slate-200 font-medium">{j.name}</span>
                         <span className="font-bold text-blue-400 px-2 py-1 bg-blue-500/10 rounded-md">{j.jumlah} Orang</span>
                       </div>
@@ -1534,11 +1865,11 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light theme-log-card">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Klasifikasi Agama</h3>
                   <div className="space-y-3 text-xs">
                     {dataStatistikAgamaTampil.map((a, idx) => (
-                      <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors">
+                      <div key={idx} className="flex justify-between items-center bg-slate-900/40 p-3 border border-slate-700/50 rounded-xl hover:bg-slate-800/60 transition-colors theme-stat-item">
                         <span className="text-slate-200 font-medium">{a.name}</span>
                         <span className="font-bold text-emerald-400 px-2 py-1 bg-emerald-500/10 rounded-md">{a.jumlah} Pegawai</span>
                       </div>
@@ -1546,7 +1877,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light theme-log-card">
                   <h3 className="text-xs font-black text-white mb-5 uppercase tracking-widest">Catatan Import</h3>
                   <div className="space-y-3 text-[11px] leading-relaxed text-slate-300">
                     <p>• Jika belum ada file Excel, dashboard statistik tetap memakai data bawaan.</p>
