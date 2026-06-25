@@ -15,57 +15,55 @@ const dataProporsi = [
   { name: 'Pemeliharaan', value: 15 }, { name: 'Lainnya', value: 15 },
 ];
 const COLORS = ['#D4AF37', '#1E3A8A', '#0F172A', '#94A3B8'];
+const PIE_COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1'];
 
-// ==================== [2] DATA UTUH REAL KANWIL SUMUT ====================
-const dataStatistikUnit = [
-  { unit: 'Kakanwil', jumlah: 1 }, { unit: 'Bagian Umum', jumlah: 10 },
-  { unit: 'Bidang PKN', jumlah: 9 }, { unit: 'Bidang PN', jumlah: 6 },
-  { unit: 'Bidang Penilaian', jumlah: 5 }, { unit: 'Bidang Lelang', jumlah: 6 },
-  { unit: 'Bidang KIHI', jumlah: 8 }, { unit: 'Jab. Fungsional', jumlah: 6 },
-];
+// ==================== [2] GENERATOR DATA DEFAULT (SEBELUM IMPORT) ====================
+const generatePegawaiData = () => {
+  const pends = ['S-1 / DIV', 'S-1 / DIV', 'S-1 / DIV', 'S-2 / Magister', 'Diploma III'];
+  const gens = ['Gen X (1965-1980)', 'Gen Y (1981-1996)', 'Gen Y (1981-1996)', 'Gen Z (1997-2012)'];
+  const golds = ['O', 'A', 'B', 'AB'];
+  const agams = ['Islam', 'Islam', 'Islam', 'Kristen', 'Katolik'];
+  const getRand = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-const dataStatistikGender = [ { name: 'Laki-Laki', value: 26 }, { name: 'Perempuan', value: 25 } ];
+  const blueprint = [
+    { unit: 'Kakanwil', list: [{j: 'Eselon II', jk: 'Laki-Laki', count: 1}] },
+    { unit: 'Bagian Umum', list: [{j: 'Eselon III / Setara', jk: 'Perempuan', count: 1}, {j: 'Eselon IV / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Perempuan', count: 2}, {j: 'Pelaksana / Setara', jk: 'Laki-Laki', count: 3}, {j: 'Pelaksana / Setara', jk: 'Perempuan', count: 3}] },
+    { unit: 'Bidang PKN', list: [{j: 'Eselon III / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Laki-Laki', count: 2}, {j: 'Eselon IV / Setara', jk: 'Perempuan', count: 1}, {j: 'Pelaksana / Setara', jk: 'Laki-Laki', count: 3}, {j: 'Pelaksana / Setara', jk: 'Perempuan', count: 2}] },
+    { unit: 'Bidang PN', list: [{j: 'Eselon III / Setara', jk: 'Perempuan', count: 1}, {j: 'Eselon IV / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Perempuan', count: 1}, {j: 'Pelaksana / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Pelaksana / Setara', jk: 'Perempuan', count: 2}] },
+    { unit: 'Bidang Penilaian', list: [{j: 'Eselon III / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Perempuan', count: 1}, {j: 'Pelaksana / Setara', jk: 'Laki-Laki', count: 2}] },
+    { unit: 'Bidang Lelang', list: [{j: 'Eselon III / Setara', jk: 'Perempuan', count: 1}, {j: 'Eselon IV / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Perempuan', count: 1}, {j: 'Pelaksana / Setara', jk: 'Laki-Laki', count: 2}, {j: 'Pelaksana / Setara', jk: 'Perempuan', count: 1}] },
+    { unit: 'Bidang KIHI', list: [{j: 'Eselon III / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Perempuan', count: 2}, {j: 'Pelaksana / Setara', jk: 'Laki-Laki', count: 2}, {j: 'Pelaksana / Setara', jk: 'Perempuan', count: 2}] },
+    { unit: 'Jab. Fungsional', list: [{j: 'Eselon IV / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Eselon IV / Setara', jk: 'Perempuan', count: 2}, {j: 'Pelaksana / Setara', jk: 'Laki-Laki', count: 1}, {j: 'Pelaksana / Setara', jk: 'Perempuan', count: 2}] }
+  ];
 
-const dataStatistikJabatan = [
-  { name: 'Eselon II', jumlah: 1 }, { name: 'Eselon III / Setara', jumlah: 6 },
-  { name: 'Eselon IV / Setara', jumlah: 18 }, { name: 'Pelaksana / Setara', jumlah: 26 },
-];
+  let result = [];
+  let idCounter = 1;
+  const namesL = ["Andi Pratama", "Budi Santoso", "Reza Rahadian", "Deni Setiawan", "Eko Prasetyo", "Fajar Nugraha", "Gilang Ramadhan", "Hadi Kusuma", "Iwan Fals", "Joko Widodo", "Kevin Sanjaya", "Lukman Hakim", "Rizky Febian", "Rahmat Hidayat", "Surya Saputra", "Tegar Septian", "Wahyu Hidayat", "Yoga Pratama", "Zainal Abidin", "Arief Rachman", "Bayu Skak", "Candra Wijaya", "Dika Angkasaputra", "Hendra Setiawan", "Bagas Maulana", "Dimas Ekky"];
+  const namesP = ["Siti Nurhaliza", "Rina Nose", "Ani Yudhoyono", "Bunga Citra", "Citra Kirana", "Dian Sastro", "Eka Kurnia", "Fitri Tropica", "Gita Gutawa", "Hana Saraswati", "Indah Permatasari", "Ayu Tingting", "Lestari Andayani", "Maya Septha", "Nita Thalia", "Putri Marino", "Ratna Galih", "Sari Nila", "Tia Ivanka", "Wulan Guritno", "Yuni Shara", "Zahra Nur", "Nurul Arifin", "Desi Ratnasari", "Mega Iskanti"];
 
-const dataStatistikPendidikan = [
-  { name: 'S-2 / Magister', jumlah: 16 }, { name: 'S-1 / DIV', jumlah: 24 },
-  { name: 'Diploma III', jumlah: 9 }, { name: 'Diploma I', jumlah: 1 }, { name: 'SMA', jumlah: 1 },
-];
-
-const dataStatistikGenerasi = [
-  { name: 'Gen X (1965-1980)', jumlah: 29 }, { name: 'Gen Y (1981-1996)', jumlah: 19 }, { name: 'Gen Z (1997-2012)', jumlah: 3 },
-];
-
-const dataStatistikGoldar = [
-  { name: 'Golongan A', value: 16 }, { name: 'Golongan B', value: 14 },
-  { name: 'Golongan AB', value: 4 }, { name: 'Golongan O', value: 17 },
-];
-
-const dataStatistikAgama = [
-  { name: 'Islam', jumlah: 27 }, { name: 'Kristen', jumlah: 20 }, { name: 'Katolik', jumlah: 4 },
-];
-
-// --- DUMMY DATA UNTUK MODAL PEGAWAI & UNIT ---
-const mockDaftarPegawai = [
-  { id: 1, nip: '198701122010011001', nama: 'Andi Pratama', jabatan: 'Kepala Bagian', unit: 'Bagian Umum', jk: 'Laki-laki' },
-  { id: 2, nip: '199001152012022002', nama: 'Siti Nurhaliza', jabatan: 'Analis Keuangan', unit: 'Bidang PKN', jk: 'Perempuan' },
-  { id: 3, nip: '196805252009011003', nama: 'Budi Santoso', jabatan: 'Penilai', unit: 'Bidang Penilaian', jk: 'Laki-laki' },
-  { id: 4, nip: '199303112013002004', nama: 'Rina Putri', jabatan: 'Analis Lelang', unit: 'Bidang Lelang', jk: 'Perempuan' },
-  { id: 5, nip: '198506152008011005', nama: 'Reza Rahadian', jabatan: 'Pelaksana', unit: 'Bidang KIHI', jk: 'Laki-laki' },
-];
+  let indexL = 0; let indexP = 0;
+  blueprint.forEach(b => {
+    b.list.forEach(item => {
+      for (let i = 0; i < item.count; i++) {
+         let name = item.jk === 'Laki-Laki' ? namesL[indexL++] : namesP[indexP++];
+         let nip = "19" + (75 + Math.floor(Math.random()*20)) + "0" + (1+Math.floor(Math.random()*9)) + "1220" + (10+Math.floor(Math.random()*12)) + "01100" + (idCounter % 10);
+         result.push({
+           id: idCounter++, nip: nip, nama: name, 
+           jabatan: item.j.includes('Eselon') ? 'Kepala ' + b.unit : 'Pelaksana ' + b.unit, 
+           eselon: item.j, unit: b.unit, jk: item.jk,
+           pendidikan: getRand(pends), generasi: getRand(gens), goldar: getRand(golds), agama: getRand(agams)
+         });
+      }
+    });
+  });
+  return result;
+}
 
 const mockRealisasiUnitBulanan = [
   { bulan: 'Jan', Realisasi: 2 }, { bulan: 'Feb', Realisasi: 3.5 }, { bulan: 'Mar', Realisasi: 5 },
   { bulan: 'Apr', Realisasi: 4 }, { bulan: 'Mei', Realisasi: 6 }, { bulan: 'Jun', Realisasi: 8.5 },
   { bulan: 'Jul', Realisasi: 7 }, { bulan: 'Ags', Realisasi: 9 }, { bulan: 'Sep', Realisasi: 11 },
 ];
-
-const GENDER_COLORS = ['#1E3A8A', '#D4AF37'];
-const GOLDAR_COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B'];
 
 const THEME_STYLE = `
 .theme-light { color: #0f172a; background: linear-gradient(135deg, #f8fafc 0%, #ffffff 54%, #eef4ff 100%) !important; }
@@ -98,40 +96,9 @@ const THEME_STYLE = `
 .animate-popIn { animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 `;
 
-const STATISTIK_FIELD_ALIASES = {
-  unit: ['unit', 'bagian', 'bidang', 'seksi', 'departemen', 'department', 'office'],
-  gender: ['gender', 'jenis_kelamin', 'jk', 'sex'],
-  jabatan: ['jabatan', 'posisi', 'eselon', 'grade'],
-  pendidikan: ['pendidikan', 'education', 'degree'],
-  generasi: ['generasi', 'kelompok_usia', 'age_group', 'angkatan'],
-  goldar: ['goldar', 'golongan_darah', 'blood_type', 'golongan darah'],
-  agama: ['agama', 'religion', 'kepercayaan']
-};
-
-const normalizeCell = (value) => String(value ?? '').trim();
-const pickFirstValue = (row, aliases) => {
-  for (const key of aliases) {
-    const value = normalizeCell(row?.[key]);
-    if (value) return value;
-  }
-  return '';
-};
-
-const buildCountData = (rows, aliases, order = [], valueKey = 'jumlah', labelKey = 'name') => {
-  const counts = new Map();
-  rows.forEach((row) => {
-    const value = pickFirstValue(row, aliases) || 'Tidak diketahui';
-    counts.set(value, (counts.get(value) || 0) + 1);
-  });
-  const ordered = order.map((name) => ({ [labelKey]: name, [valueKey]: counts.get(name) || 0 }));
-  const extras = [...counts.entries()].filter(([name]) => !order.includes(name)).map(([name, count]) => ({ [labelKey]: name, [valueKey]: count }));
-  return [...ordered, ...extras];
-};
-
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard'); 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
   const [showAuthForm, setShowAuthForm] = useState(false); 
   const [isLandingMobileMenuOpen, setIsLandingMobileMenuOpen] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -143,6 +110,10 @@ export default function App() {
   const [showPegawaiModal, setShowPegawaiModal] = useState(false);
   const [showUnitModal, setShowUnitModal] = useState(false);
   const [searchPegawai, setSearchPegawai] = useState('');
+
+  // DATA MASTER PEGAWAI (Dinamis dari Upload Excel)
+  const [daftarPegawai, setDaftarPegawai] = useState(() => generatePegawaiData());
+  const [statistikExcelFileName, setStatistikExcelFileName] = useState('');
 
   const [themeMode, setThemeMode] = useState(() => {
     const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('djkn_theme') : null;
@@ -179,14 +150,13 @@ export default function App() {
     if (savedSession) { setSessionUser(JSON.parse(savedSession)); setIsLoggedIn(true); }
   }, []);
 
-  // --- SYSTEM TOAST NOTIFICATION ---
   const [toast, setToast] = useState({ show: false, type: '', message: '' });
   const showToast = (message, type = 'error') => {
     setToast({ show: true, type, message });
     setTimeout(() => setToast({ show: false, type: '', message: '' }), 4000);
   };
 
-  // --- STATE INPUT FORM REGISTRASI & VALIDASI ---
+  // --- STATE INPUT FORM REGISTRASI ---
   const [authName, setAuthName] = useState('');
   const [authUsername, setAuthUsername] = useState('');
   const [authEmail, setAuthEmail] = useState('');
@@ -216,7 +186,6 @@ export default function App() {
   if (passUpperLower) passStrengthCount++;
   if (passNumber) passStrengthCount++;
   if (passSymbol) passStrengthCount++;
-
   const isConfirmValid = authConfirmPassword.length > 0 && authConfirmPassword === authPassword;
 
   useEffect(() => {
@@ -268,14 +237,11 @@ export default function App() {
   const [bidangInput, setBidangInput] = useState('Bagian Umum');
   const [tipeInput, setTipeInput] = useState('keluar');
 
-  const [statistikExcelRows, setStatistikExcelRows] = useState([]);
-  const [statistikExcelFileName, setStatistikExcelFileName] = useState('');
-
+  // --- FORM HANDLERS ---
   const handleRegister = (e) => {
     e.preventDefault();
     if (!isNameValid || !isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
-      showToast('Formulir pendaftaran tidak valid. Harap penuhi semua ketentuan!', 'error');
-      return;
+      showToast('Formulir pendaftaran tidak valid. Harap penuhi semua ketentuan!', 'error'); return;
     }
     const userBaru = { username: authUsername.trim(), email: authEmail.trim().toLowerCase(), password: authPassword, name: authName.trim(), role: authRole, unit: authUnit };
     setDatabaseUsers([...databaseUsers, userBaru]);
@@ -292,24 +258,18 @@ export default function App() {
     if (userDitemukan) {
       localStorage.setItem('djkn_session', JSON.stringify(userDitemukan));
       setSessionUser(userDitemukan); setIsLoggedIn(true); setShowAuthForm(false); setCurrentView('dashboard'); 
-      setAuthUsername(''); setAuthPassword('');
-      showToast(`Selamat datang kembali, ${userDitemukan.name}!`, 'success');
-    } else {
-      showToast('Username, Email, atau Password salah!', 'error');
-    }
+      setAuthUsername(''); setAuthPassword(''); showToast(`Selamat datang kembali, ${userDitemukan.name}!`, 'success');
+    } else { showToast('Username, Email, atau Password salah!', 'error'); }
   };
 
   const handleLogout = () => { localStorage.removeItem('djkn_session'); setIsLoggedIn(false); setSessionUser(null); setIsMobileMenuOpen(false); };
   const navigateTo = (view) => { setCurrentView(view); setIsMobileMenuOpen(false); };
-
   const handleSaveProfile = (e) => {
     e.preventDefault(); setProfileSuccess('');
     const userDiperbarui = { ...sessionUser, name: editName.trim(), password: editPassword, unit: editUnit };
     setSessionUser(userDiperbarui); localStorage.setItem('djkn_session', JSON.stringify(userDiperbarui));
     const updatedDB = databaseUsers.map((user) => user.username.toLowerCase() === sessionUser.username.toLowerCase() ? userDiperbarui : user);
-    setDatabaseUsers(updatedDB);
-    setProfileSuccess('Profil Anda berhasil diperbarui!');
-    setTimeout(() => setProfileSuccess(''), 3000);
+    setDatabaseUsers(updatedDB); setProfileSuccess('Profil Anda berhasil diperbarui!'); setTimeout(() => setProfileSuccess(''), 3000);
   };
 
   const handleTambahTransaksi = (e) => {
@@ -330,17 +290,14 @@ export default function App() {
       return;
     }
     if (selectedTransaksi.length === 0) return;
-    const totalHapus = selectedTransaksi.length;
-    const konfirmasi = window.confirm(`Apakah kamu yakin ingin menghapus ${totalHapus} data terpilih?`);
-    if (konfirmasi) {
-      setTransaksi((prev) => prev.filter(t => !selectedTransaksi.includes(t.id)));
-      setSelectedTransaksi([]);
-    }
+    const konfirmasi = window.confirm(`Apakah kamu yakin ingin menghapus ${selectedTransaksi.length} data terpilih?`);
+    if (konfirmasi) { setTransaksi((prev) => prev.filter(t => !selectedTransaksi.includes(t.id))); setSelectedTransaksi([]); }
   };
 
   const handleToggleTransaksiSelect = (id) => { setSelectedTransaksi((prev) => prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id] ); };
   const handleSelectAllTransaksi = () => { if (selectedTransaksi.length === transaksi.length) { setSelectedTransaksi([]); } else { setSelectedTransaksi(transaksi.map((t) => t.id)); } };
 
+  // --- IMPORT EXCEL TRANSAKSI KEUANGAN ---
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -350,75 +307,161 @@ export default function App() {
         const bstr = evt.target.result; const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0]; const ws = wb.Sheets[wsname];
         const rawData = XLSX.utils.sheet_to_json(ws, { defval: "" });
-        
         const dataBaru = rawData.map(item => {
           const normalized = {};
           Object.keys(item).forEach(key => { normalized[key.trim().toLowerCase()] = item[key]; });
           const getVal = (aliases) => { for (let key of aliases) { if (normalized[key] !== undefined && normalized[key] !== "") return normalized[key]; } return null; };
-
           const rawTanggal = getVal(['tanggal', 'tgl', 'date', 'waktu', 'hari']) || new Date().toLocaleDateString('id-ID');
           const rawUraian = getVal(['uraian', 'keterangan', 'deskripsi', 'nama', 'transaksi', 'rincian']) || "Data Import";
           const rawAkun = getVal(['akun', 'kode', 'rekening', 'kode_akun']) || "521111";
           const rawBidang = getVal(['bidang', 'unit', 'bagian', 'seksi']) || "Bagian Umum";
           const rawJumlah = getVal(['jumlah', 'nominal', 'total', 'harga', 'rp', 'saldo', 'nilai', 'pengeluaran', 'pemasukan']) || 0;
           const rawTipe = getVal(['tipe', 'jenis', 'status', 'arus']);
-
           let parsedTanggal = rawTanggal;
           if (typeof rawTanggal === 'number') { const dateObj = new Date(Math.round((rawTanggal - 25569) * 86400 * 1000)); parsedTanggal = dateObj.toLocaleDateString('id-ID'); }
-
           const stringJumlah = String(rawJumlah); const bersihkanAngka = stringJumlah.replace(/[^0-9]/g, ''); 
           const parsedJumlah = parseFloat(bersihkanAngka) || 0;
-
           let tipeTrans = "keluar"; 
           if (rawTipe) { tipeTrans = String(rawTipe).toLowerCase().includes('masuk') ? 'masuk' : 'keluar'; } else {
              if (stringJumlah.includes('+')) tipeTrans = 'masuk'; else if (stringJumlah.includes('-')) tipeTrans = 'keluar';
           }
           return { id: Date.now() + Math.random(), date: parsedTanggal, uraian: String(rawUraian), akun: String(rawAkun), bidang: String(rawBidang), jumlah: parsedJumlah, tipe: tipeTrans };
         });
-
         setTransaksi([...dataBaru, ...transaksi]); alert(`Berhasil mengimpor ${dataBaru.length} data dengan sempurna!`);
-      } catch (error) { console.error(error); alert("Gagal membaca file. Pastikan format Excel Anda benar."); } finally { e.target.value = ''; }
+      } catch (error) { alert("Gagal membaca file. Pastikan format Excel Anda benar."); } finally { e.target.value = ''; }
     };
     reader.readAsBinaryString(file);
   };
 
+  // --- IMPORT EXCEL STATISTIK PEGAWAI (DINAMIS & ROBUST) ---
   const handleImportStatistikExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    const getEselonCat = (jabatan) => {
+      const j = String(jabatan).toLowerCase();
+      if (j.includes('kepala kantor wil')) return 'Eselon II';
+      if (j.includes('kepala bagian') || j.includes('kepala bidang')) return 'Eselon III / Setara';
+      if (j.includes('kepala subbagian') || j.includes('kepala seksi')) return 'Eselon IV / Setara';
+      if (j.includes('pelaksana')) return 'Pelaksana / Setara';
+      if (j.includes('fungsional') || j.includes('ahli') || j.includes('penilai') || j.includes('pranata')) return 'Fungsional';
+      return 'Lainnya';
+    };
+
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const bstr = evt.target.result; const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0]; const ws = wb.Sheets[wsname];
-        const rawData = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        const bstr = evt.target.result; 
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0]; 
+        const ws = wb.Sheets[wsname];
+        
+        // Membaca sbg array 2D untuk mengatasi masalah judul/header yang tidak selalu di baris ke-1
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        
+        // Mencari otomatis posisi baris Header (berisi 'Nama' dan 'NIP'/'Jabatan')
+        let headerRowIndex = -1;
+        for (let i = 0; i < Math.min(rows.length, 20); i++) {
+           const rowStr = rows[i].map(c => String(c).toLowerCase()).join(' ');
+           if (rowStr.includes('nama') && (rowStr.includes('nip') || rowStr.includes('jabatan'))) {
+              headerRowIndex = i;
+              break;
+           }
+        }
 
-        const normalizedRows = rawData.map((row) => ({
-          unit: pickFirstValue(row, STATISTIK_FIELD_ALIASES.unit), gender: pickFirstValue(row, STATISTIK_FIELD_ALIASES.gender),
-          jabatan: pickFirstValue(row, STATISTIK_FIELD_ALIASES.jabatan), pendidikan: pickFirstValue(row, STATISTIK_FIELD_ALIASES.pendidikan),
-          generasi: pickFirstValue(row, STATISTIK_FIELD_ALIASES.generasi), goldar: pickFirstValue(row, STATISTIK_FIELD_ALIASES.goldar),
-          agama: pickFirstValue(row, STATISTIK_FIELD_ALIASES.agama),
-        }));
+        if (headerRowIndex === -1) { 
+           alert('Kolom Nama/NIP tidak ditemukan. Pastikan Anda mengunggah sheet data pegawai yang valid.'); 
+           return; 
+        }
 
-        if (!normalizedRows.length) { alert('File Excel tidak memiliki data yang bisa dibaca.'); return; }
-        setStatistikExcelRows(normalizedRows); setStatistikExcelFileName(file.name); alert(`Berhasil mengimpor ${normalizedRows.length} data pegawai untuk menu statistik!`);
-      } catch (error) { alert('Gagal membaca file statistik. Pastikan file Excel valid dan memiliki kolom yang sesuai.'); } finally { e.target.value = ''; }
+        const headers = rows[headerRowIndex].map(h => String(h).trim().toLowerCase());
+        const parsedData = [];
+
+        // Looping isi baris di bawah header
+        for (let i = headerRowIndex + 1; i < rows.length; i++) {
+           const row = rows[i];
+           if (!row || !row.some(cell => cell !== '')) continue; // Skip baris kosong
+
+           // Helper untuk mencari nilai berdasarkan kemungkinan nama kolom (alias)
+           const getVal = (aliases) => {
+               for (const alias of aliases) {
+                   const idx = headers.findIndex(h => h === alias || h.includes(alias));
+                   if (idx !== -1 && row[idx]) return String(row[idx]).trim();
+               }
+               return '';
+           };
+
+           const nama = getVal(['nama']);
+           if (!nama) continue; // Nama wajib ada
+
+           let jkRaw = getVal(['jenis kelamin', 'gender', 'jk', 'kelamin']);
+           let jk = 'Laki-Laki';
+           if (jkRaw.toLowerCase().startsWith('p') || jkRaw.toLowerCase() === 'female') jk = 'Perempuan';
+
+           let rawJabatan = getVal(['jabatan', 'posisi']);
+
+           parsedData.push({
+               id: Date.now() + i,
+               nip: getVal(['nip']),
+               nama: nama,
+               jabatan: rawJabatan || 'Tidak Diketahui',
+               eselon: getVal(['golongan ruang/pangkat', 'pangkat', 'golongan']) ? getEselonCat(rawJabatan) : getEselonCat(rawJabatan),
+               unit: getVal(['ue3', 'unit kerja', 'unit', 'bagian', 'bidang']) || 'Tidak Diketahui',
+               jk: jk,
+               pendidikan: getVal(['pendidikan terakhir', 'pendidikan', 'ijazah']) || 'Tidak Diketahui',
+               generasi: getVal(['generasi', 'angkatan']) || 'Tidak Diketahui',
+               goldar: getVal(['golongan darah', 'goldar']) || 'Tidak Diketahui',
+               agama: getVal(['agama', 'kepercayaan']) || 'Tidak Diketahui'
+           });
+        }
+
+        setDaftarPegawai(parsedData); 
+        setStatistikExcelFileName(file.name); 
+        alert(`Berhasil mengimpor ${parsedData.length} data pegawai! Statistik & Daftar Pegawai telah diupdate otomatis.`);
+      } catch (error) { 
+        alert('Gagal membaca file statistik. Pastikan file Excel valid dan tidak rusak.'); 
+      } finally { 
+        e.target.value = ''; 
+      }
     };
     reader.readAsBinaryString(file);
   };
 
-  const handleResetStatistikImport = () => { setStatistikExcelRows([]); setStatistikExcelFileName(''); };
+  const handleResetStatistikImport = () => { 
+    setDaftarPegawai(generatePegawaiData()); 
+    setStatistikExcelFileName(''); 
+  };
+  
   const scrollToSection = (id) => { setIsLandingMobileMenuOpen(false); const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); };
 
-  const statistikSourceRows = statistikExcelRows.length > 0 ? statistikExcelRows : null;
-  const dataStatistikUnitTampil = statistikSourceRows ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.unit, dataStatistikUnit.map((item) => item.unit), 'jumlah', 'unit') : dataStatistikUnit;
-  const dataStatistikGenderTampil = statistikSourceRows ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.gender, dataStatistikGender.map((item) => item.name), 'value') : dataStatistikGender;
-  const dataStatistikJabatanTampil = statistikSourceRows ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.jabatan, dataStatistikJabatan.map((item) => item.name), 'jumlah') : dataStatistikJabatan;
-  const dataStatistikPendidikanTampil = statistikSourceRows ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.pendidikan, dataStatistikPendidikan.map((item) => item.name), 'jumlah') : dataStatistikPendidikan;
-  const dataStatistikGenerasiTampil = statistikSourceRows ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.generasi, dataStatistikGenerasi.map((item) => item.name), 'jumlah') : dataStatistikGenerasi;
-  const dataStatistikGoldarTampil = statistikSourceRows ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.goldar, dataStatistikGoldar.map((item) => item.name), 'value') : dataStatistikGoldar;
-  const dataStatistikAgamaTampil = statistikSourceRows ? buildCountData(statistikSourceRows, STATISTIK_FIELD_ALIASES.agama, dataStatistikAgama.map((item) => item.name), 'jumlah') : dataStatistikAgama;
+  // --- ENGINE AGREGASI DINAMIS UNTUK GRAFIK ---
+  const aggregateData = (data, key, valueKey = 'value', nameKey = 'name') => {
+    const counts = {};
+    data.forEach(item => {
+      let val = item[key];
+      if (!val || val === '' || val === '-') val = 'Tidak Diketahui';
+      counts[val] = (counts[val] || 0) + 1;
+    });
+    return Object.keys(counts)
+      .map(k => ({ [nameKey]: k, [valueKey]: counts[k] }))
+      .sort((a, b) => b[valueKey] - a[valueKey]); // Sort descending
+  };
 
-  const filteredPegawai = mockDaftarPegawai.filter(p => p.nama.toLowerCase().includes(searchPegawai.toLowerCase()) || p.nip.includes(searchPegawai));
+  const dataStatistikUnitTampil = aggregateData(daftarPegawai, 'unit', 'jumlah', 'unit');
+  const dataStatistikGenderTampil = aggregateData(daftarPegawai, 'jk', 'value', 'name');
+  const dataStatistikGenerasiTampil = aggregateData(daftarPegawai, 'generasi', 'jumlah', 'name');
+  const dataStatistikPendidikanTampil = aggregateData(daftarPegawai, 'pendidikan', 'jumlah', 'name');
+  const dataStatistikGoldarTampil = aggregateData(daftarPegawai, 'goldar', 'value', 'name');
+  const dataStatistikAgamaTampil = aggregateData(daftarPegawai, 'agama', 'jumlah', 'name');
+  // Ambil Eselon dan batasi jika telalu banyak
+  const dataStatistikJabatanTampil = aggregateData(daftarPegawai, 'eselon', 'jumlah', 'name').slice(0, 8);
+
+  const filteredPegawai = daftarPegawai.filter(p => 
+    p.nama.toLowerCase().includes(searchPegawai.toLowerCase()) || 
+    p.nip.includes(searchPegawai) || 
+    p.jabatan.toLowerCase().includes(searchPegawai.toLowerCase()) || 
+    p.unit.toLowerCase().includes(searchPegawai.toLowerCase())
+  );
 
   // ==================== VIEW: KOMPONEN TOAST ====================
   const ToastNotification = () => {
@@ -454,15 +497,12 @@ export default function App() {
 
             {isRegisterMode ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-                {/* KIRI: FORMULIR REGISTRASI */}
                 <form onSubmit={handleRegister} className="space-y-5 text-sm animate-fadeIn">
-                  
                   <div>
                     <label className="text-slate-700 font-bold block mb-1.5">Nama Lengkap</label>
                     <input type="text" value={authName} onChange={(e) => setAuthName(e.target.value)} className={`w-full bg-slate-50 border rounded-xl p-3.5 text-slate-900 focus:outline-none transition ${authName.length > 0 ? (isNameValid ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-red-400') : 'border-slate-300 focus:border-[#D4AF37]'}`} required placeholder="Cth: David Jonathan" />
                     {authName.length > 0 && !isNameValid && <p className="text-[10px] text-red-500 mt-1 font-semibold flex items-center gap-1"><X size={12}/> Minimal 3 karakter & tanpa angka/simbol</p>}
                   </div>
-
                   <div>
                     <label className="text-slate-700 font-bold block mb-1.5">Username</label>
                     <input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value.replace(/\s/g, ''))} className={`w-full bg-slate-50 border rounded-xl p-3.5 text-slate-900 focus:outline-none transition ${authUsername.length > 0 ? (isUsernameValid ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-red-400') : 'border-slate-300 focus:border-[#D4AF37]'}`} required placeholder="Cth: david_jonathan" />
@@ -472,7 +512,6 @@ export default function App() {
                       </p>
                     )}
                   </div>
-
                   <div>
                     <label className="text-slate-700 font-bold block mb-1.5">Email Akses</label>
                     <input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className={`w-full bg-slate-50 border rounded-xl p-3.5 text-slate-900 focus:outline-none transition ${authEmail.length > 0 ? (isEmailValid ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-red-400') : 'border-slate-300 focus:border-[#D4AF37]'}`} required placeholder="Cth: david@kemenkeu.go.id" />
@@ -482,7 +521,6 @@ export default function App() {
                       </p>
                     )}
                   </div>
-
                   <div>
                     <label className="text-slate-700 font-bold block mb-1.5">Password</label>
                     <div className="relative">
@@ -508,7 +546,6 @@ export default function App() {
                       </div>
                     )}
                   </div>
-
                   <div>
                     <label className="text-slate-700 font-bold block mb-1.5">Konfirmasi Password</label>
                     <div className="relative">
@@ -525,7 +562,6 @@ export default function App() {
                       </p>
                     )}
                   </div>
-
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <div>
                       <label className="text-slate-700 font-bold block mb-1.5">Akses</label>
@@ -541,14 +577,12 @@ export default function App() {
                       </select>
                     </div>
                   </div>
-
                   <button type="submit" disabled={!isNameValid || !isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmValid} className="w-full bg-[#f3d05e] hover:bg-[#eebb4d] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-[#051622] font-black rounded-xl py-3.5 mt-4 flex items-center justify-center gap-2 uppercase tracking-wider transition-all shadow-md">
                     <ShieldCheck size={18} /> Daftar Akun Aman
                   </button>
                   <p className="text-center text-slate-500 mt-4 text-xs">Sudah punya akun? <button type="button" onClick={() => setIsRegisterMode(false)} className="text-[#dca437] font-bold underline ml-1 hover:text-[#bda032]">Login</button></p>
                 </form>
 
-                {/* KANAN: KETENTUAN */}
                 <div className="bg-slate-50/50 p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm">
                   <h3 className="font-black text-slate-800 mb-6 text-base border-b border-slate-200 pb-3 flex items-center gap-2">
                     <Shield size={18} className="text-[#D4AF37]"/> Ketentuan Registrasi
@@ -587,7 +621,6 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              /* FORMULIR LOGIN */
               <form onSubmit={handleLogin} className="space-y-5 text-sm animate-fadeIn">
                 <div>
                   <label className="text-slate-700 font-bold block mb-1.5">Username / Email</label>
@@ -619,6 +652,7 @@ export default function App() {
     return (
       <div className={`theme-root theme-landing-root bg-gradient-to-br from-[#0f172a] via-[#0b1724] to-[#020617] min-h-screen font-sans text-slate-200 overflow-x-hidden scroll-smooth ${isDarkMode ? "theme-dark" : "theme-light"}`}>
         <style>{THEME_STYLE}</style>
+        
         {/* Navigasi Landing */}
         <nav className="fixed top-0 w-full z-50 bg-[#0f172a]/90 backdrop-blur-md border-b border-slate-800 transition-all theme-landing-nav">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -641,7 +675,19 @@ export default function App() {
               <div className="md:hidden flex items-center"><button onClick={() => setIsLandingMobileMenuOpen(!isLandingMobileMenuOpen)} className="text-slate-300 p-2 focus:outline-none">{isLandingMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}</button></div>
             </div>
           </div>
+          {isLandingMobileMenuOpen && (
+            <div className="md:hidden bg-[#0f172a] border-b border-slate-800 animate-fadeIn theme-landing-menu">
+              <div className="px-4 pt-2 pb-6 space-y-2">
+                <button onClick={() => scrollToSection('beranda')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Beranda</button>
+                <button onClick={() => scrollToSection('filosofi')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Filosofi Logo</button>
+                <button onClick={() => scrollToSection('layanan')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Layanan & Kontak</button>
+                <button onClick={toggleTheme} className="w-full mt-4 border border-slate-600/40 text-slate-200 bg-slate-800/40 font-bold px-4 py-3 rounded-xl text-base flex justify-center items-center gap-2">{isDarkMode ? <Sun size={16} /> : <Moon size={16} />} {isDarkMode ? 'Light Mode' : 'Dark Mode'}</button>
+                <button onClick={() => setShowAuthForm(true)} className="w-full mt-4 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-bold px-4 py-3 rounded-xl text-base flex justify-center items-center gap-2"><Lock size={16} /> Login Sistem</button>
+              </div>
+            </div>
+          )}
         </nav>
+
         {/* Landing Hero */}
         <section id="beranda" className="pt-32 pb-20 px-6 min-h-screen flex items-center relative theme-landing-hero">
           <div className="absolute top-[10%] left-[50%] -translate-x-1/2 w-[80%] max-w-2xl h-[500px] bg-[#D4AF37]/5 rounded-full blur-[120px] pointer-events-none theme-hero-glow"></div>
@@ -656,9 +702,102 @@ export default function App() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button onClick={() => setShowAuthForm(true)} className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#c4a132] text-[#051622] font-black px-8 py-4 rounded-full text-sm flex justify-center items-center gap-2 transition-transform hover:-translate-y-1 shadow-lg shadow-[#D4AF37]/20">Masuk ke Dashboard <ArrowUpRight size={18} /></button>
+              <button onClick={() => scrollToSection('filosofi')} className="w-full sm:w-auto bg-slate-800/50 hover:bg-slate-800 text-white border border-slate-700 font-bold px-8 py-4 rounded-full text-sm flex justify-center items-center transition-colors">Pelajari Fitur & Makna</button>
             </div>
           </div>
         </section>
+
+        {/* Filosofi Logo */}
+        <section id="filosofi" className="py-20 px-6 bg-slate-900/40 border-t border-b border-slate-800/50 relative theme-landing-section">
+          <div className="max-w-6xl mx-auto relative z-10">
+            <div className="text-center mb-16">
+              <h2 className="text-xs font-black text-[#D4AF37] tracking-[0.2em] uppercase mb-3 flex items-center justify-center gap-2"><Info size={16}/> Makna & Identitas</h2>
+              <h3 className="text-3xl font-black text-white">Bedah Anatomi Logo SIPKA</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
+                <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm"><img src="/perisai.png" alt="Perisai" className="h-10 w-10 object-contain" /></div>
+                <div>
+                  <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#D4AF37] transition-colors mb-2">Perisai Luar (Integritas)</h4>
+                  <p className="text-sm text-slate-400 leading-relaxed">Melambangkan benteng proteksi sistem pengawasan, kepatuhan terhadap hukum, serta komitmen penuh menjaga kerahasiaan data.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
+                <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm"><img src="/tiga-manusia.png" alt="Tiga Manusia" className="h-10 w-10 object-contain" /></div>
+                <div>
+                  <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#D4AF37] transition-colors mb-2">Tiga Figur Manusia Sinergis</h4>
+                  <p className="text-sm text-slate-400 leading-relaxed">Merepresentasikan Sumber Daya Manusia (SDM) sebagai pilar utama organisasi yang berkolaborasi harmonis antar-seksi.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
+                <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm"><img src="/grafik.png" alt="Grafik" className="h-10 w-10 object-contain" /></div>
+                <div>
+                  <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#D4AF37] transition-colors mb-2">Grafik Batang Akuntabel</h4>
+                  <p className="text-sm text-slate-400 leading-relaxed">Mewakili visualisasi data realisasi keuangan DIPA yang akurat, transparan, serta performa kinerja berkala yang terukur.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
+                <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm"><img src="/kaca-pembesar.png" alt="Kaca Pembesar" className="h-10 w-10 object-contain" /></div>
+                <div>
+                  <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#D4AF37] transition-colors mb-2">Lensa Kaca Pembesar</h4>
+                  <p className="text-sm text-slate-400 leading-relaxed">Mencerminkan fungsi pemantauan yang tajam, ketelitian, serta ketepatan evaluasi internal terhadap data makro organisasi.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
+                <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm"><img src="/panah.png" alt="Panah" className="h-10 w-10 object-contain" /></div>
+                <div>
+                  <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#D4AF37] transition-colors mb-2">Panah Akselerasi Ke Atas</h4>
+                  <p className="text-sm text-slate-400 leading-relaxed">Melambangkan pertumbuhan produktivitas efisiensi kerja, akselerasi pelayanan publik, serta arah pandang ke masa depan.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4 p-6 rounded-2xl bg-slate-800/30 border border-slate-700/40 hover:bg-slate-800/60 hover:border-[#D4AF37]/40 transition-all duration-300 group shadow-md theme-card-light">
+                <div className="bg-slate-100 border border-slate-200 p-3 rounded-2xl w-fit group-hover:bg-[#D4AF37]/10 transition-colors shadow-sm"><img src="/warna.png" alt="Warna Filosofi" className="h-10 w-10 object-contain" /></div>
+                <div>
+                  <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#D4AF37] transition-colors mb-2">Biru & Emas Corporate</h4>
+                  <p className="text-sm text-slate-400 leading-relaxed">Biru melambangkan profesionalisme kedinasan. Emas melambangkan kemewahan mutu pelayanan tinggi kepada publik.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Layanan & Kontak Footer */}
+        <footer id="layanan" className="bg-[#0b1724] pt-20 pb-10 px-6 mt-10 theme-footer">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <img src="/SIPKA-logo.png" className="h-12 w-auto drop-shadow-md" alt="SIPKA" />
+                <h2 className="text-3xl font-black text-white tracking-tight">SIPKA</h2>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed pr-4 mt-4">Sistem Informasi Pemantauan Kepegawaian & Keuangan Kanwil DJKN Sumatera Utara. Solusi cerdas untuk tata kelola pemerintahan yang transparan.</p>
+            </div>
+            <div className="space-y-5">
+              <h3 className="text-sm font-black text-[#D4AF37] tracking-widest uppercase drop-shadow-sm">Pusat Layanan & Kontak</h3>
+              <div className="space-y-4 text-sm text-slate-300">
+                <div className="flex items-start gap-3 group">
+                  <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0"><MapPin size={16} className="text-[#D4AF37]" /></div>
+                  <span className="leading-relaxed">Gedung Keuangan Negara (GKN) Medan<br/>Jl. Pangeran Diponegoro No.30-A<br/>Medan, Sumatera Utara</span>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0"><Mail size={16} className="text-[#D4AF37]" /></div>
+                  <span>kanwil.sumut@kemenkeu.go.id</span>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-5">
+              <h3 className="text-sm font-black text-[#D4AF37] tracking-widest uppercase drop-shadow-sm">Kanal Media Sosial</h3>
+              <p className="text-sm text-slate-400">Ikuti perkembangan dan informasi terbaru melalui media sosial resmi kami.</p>
+              <div className="flex gap-4">
+                <a href="https://www.instagram.com/djknkanwilsumut/?hl=en" target="_blank" rel="noreferrer" className="p-3.5 bg-slate-800 border border-slate-700 rounded-full hover:border-pink-500 hover:-translate-y-1 transition-all duration-300 group shadow-md"><SiInstagram size={20} className="text-slate-400 group-hover:text-pink-500 transition-colors" /></a>
+                <a href="https://www.facebook.com/kanwildjknsumut/?locale=id_ID" target="_blank" rel="noreferrer" className="p-3.5 bg-slate-800 border border-slate-700 rounded-full hover:border-blue-500 hover:-translate-y-1 transition-all duration-300 group shadow-md"><SiFacebook size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" /></a>
+                <a href="https://www.youtube.com/@KanwilDJKNSumut" target="_blank" rel="noreferrer" className="p-3.5 bg-slate-800 border border-slate-700 rounded-full hover:border-red-500 hover:-translate-y-1 transition-all duration-300 group shadow-md"><SiYoutube size={20} className="text-slate-400 group-hover:text-red-500 transition-colors" /></a>
+              </div>
+            </div>
+          </div>
+          <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-slate-800/80 text-center">
+            <p className="text-xs text-slate-500 font-medium tracking-wide">&copy; {new Date().getFullYear()} Kanwil DJKN Sumatera Utara. Hak Cipta Dilindungi Undang-Undang.</p>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -784,57 +923,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* [BARU] 4 KARTU RINGKASAN SDM DENGAN DRILL-DOWN MODAL */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Total Pegawai (Clickable) */}
-                <div onClick={() => setShowPegawaiModal(true)} className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer group theme-panel-light flex items-center gap-4">
-                  <div className="bg-[#D4AF37]/20 p-3.5 rounded-xl text-[#D4AF37] group-hover:scale-110 transition-transform">
-                    <Users size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-[#D4AF37]">51</div>
-                    <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Total Pegawai</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">(Klik untuk detail)</div>
-                  </div>
-                </div>
-
-                {/* 2. Bidang / Unit (Clickable) */}
-                <div onClick={() => setShowUnitModal(true)} className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer group theme-panel-light flex items-center gap-4">
-                  <div className="bg-blue-500/20 p-3.5 rounded-xl text-blue-400 group-hover:scale-110 transition-transform">
-                    <LayoutGrid size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-blue-400">{dataStatistikUnitTampil.length}</div>
-                    <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Bidang / Unit</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">(Klik untuk detail)</div>
-                  </div>
-                </div>
-
-                {/* 3. Laki-Laki */}
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4 hover:shadow-xl transition-all">
-                  <div className="bg-indigo-500/20 p-3.5 rounded-xl text-indigo-400">
-                    <User size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-indigo-400">26</div>
-                    <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Laki-laki</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">Pegawai</div>
-                  </div>
-                </div>
-
-                {/* 4. Perempuan */}
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4 hover:shadow-xl transition-all">
-                  <div className="bg-rose-500/20 p-3.5 rounded-xl text-rose-400">
-                    <User size={24} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-rose-400">25</div>
-                    <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Perempuan</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">Pegawai</div>
-                  </div>
-                </div>
-              </div>
-
+              {/* FORM TRANSAKSI & LOG MUTASI */}
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {sessionUser?.role === 'admin' && (
                   <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl h-fit theme-panel-light">
@@ -866,27 +955,15 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Container Tombol agar berjajar */}
                       <div className="flex gap-3 pt-2">
-                        {/* Tombol Simpan */}
                         <button type="submit" className="flex-1 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 rounded-xl transition-transform hover:scale-[1.02] shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center gap-2">
                           <PlusCircle size={14}/> Simpan
                         </button>
-
-                        {/* Tombol Import Excel */}
                         <label className="flex-1 text-center bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl cursor-pointer transition-colors border border-slate-600 flex items-center justify-center gap-2">
-                          <input 
-                            type="file" 
-                            accept=".xlsx, .xls" 
-                            onChange={handleImportExcel} 
-                            className="hidden" 
-                          />
+                          <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} className="hidden" />
                           Import Excel
                         </label>
                       </div>
-                      <p className={`text-[11px] mt-3 leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                        Format Excel yang didukung: <span className="text-[#D4AF37] font-semibold">tanggal/tgl/date</span>, <span className="text-[#D4AF37] font-semibold">uraian/keterangan/deskripsi</span>, <span className="text-[#D4AF37] font-semibold">akun/kode/rekening</span>, <span className="text-[#D4AF37] font-semibold">bidang/unit/bagian</span>, <span className="text-[#D4AF37] font-semibold">jumlah/nominal</span>, dan <span className="text-[#D4AF37] font-semibold">tipe/jenis/status</span>.
-                      </p>
                     </form>
                   </div>
                 )}
@@ -895,53 +972,28 @@ export default function App() {
                   <div className="flex flex-col gap-3 mb-5">
                     <h3 className="text-xs font-black text-white tracking-widest uppercase">Log Mutasi Anggaran Terkini</h3>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        Gunakan checkbox untuk memilih satu atau banyak data, lalu hapus sekaligus agar proses lebih cepat.
-                      </p>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">Gunakan checkbox untuk memilih satu atau banyak data, lalu hapus sekaligus agar proses lebih cepat.</p>
                       {sessionUser?.role === 'admin' && (
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`text-[11px] font-medium px-3 py-2 rounded-xl border ${isDarkMode ? "text-slate-300 bg-slate-900/30 border-slate-700/50" : "text-slate-700 bg-white border-slate-200 shadow-sm"}`}>
                             {selectedTransaksi.length} dipilih
                           </span>
-                          <button
-                            type="button"
-                            onClick={handleSelectAllTransaksi}
-                            className={`inline-flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-xl border transition-colors ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}
-                          >
-                            <input
-                              type="checkbox"
-                              ref={selectAllTransaksiRef}
-                              checked={isAllTransaksiSelected}
-                              readOnly
-                              className="h-4 w-4 accent-[#D4AF37]"
-                            />
-                            Select All
+                          <button type="button" onClick={handleSelectAllTransaksi} className={`inline-flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-xl border transition-colors ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}>
+                            <input type="checkbox" ref={selectAllTransaksiRef} checked={isAllTransaksiSelected} readOnly className="h-4 w-4 accent-[#D4AF37]" /> Select All
                           </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleHapusTransaksi()}
-                            disabled={selectedTransaksi.length === 0}
-                            className={`inline-flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-xl border transition-colors disabled:cursor-not-allowed ${isDarkMode ? "bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-400 text-white border-rose-400/40" : "bg-rose-50 hover:bg-rose-100 disabled:bg-slate-100 disabled:text-slate-400 text-rose-600 border-rose-200 shadow-sm"}`}
-                          >
-                            <Trash2 size={14} />
-                            Hapus Terpilih
+                          <button type="button" onClick={() => handleHapusTransaksi()} disabled={selectedTransaksi.length === 0} className={`inline-flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-xl border transition-colors disabled:cursor-not-allowed ${isDarkMode ? "bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-400 text-white border-rose-400/40" : "bg-rose-50 hover:bg-rose-100 disabled:bg-slate-100 disabled:text-slate-400 text-rose-600 border-rose-200 shadow-sm"}`}>
+                            <Trash2 size={14} /> Hapus Terpilih
                           </button>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* KONTAINER SCROLL UNTUK TABEL */}
                   <div className="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                     <table className="w-full text-left text-xs border-collapse relative">
                       <thead className={`sticky top-0 backdrop-blur-sm z-10 ${isDarkMode ? "bg-[#0f172a]/95" : "bg-slate-100"}`}>
                         <tr className={`border-b ${isDarkMode ? "border-slate-700 text-slate-300" : "border-slate-200 text-slate-700"}`}>
-                          {sessionUser?.role === 'admin' && (
-                            <th className="py-3 px-2 font-bold text-center w-12">
-                              <span className="sr-only">Select</span>
-                            </th>
-                          )}
+                          {sessionUser?.role === 'admin' && <th className="py-3 px-2 font-bold text-center w-12"><span className="sr-only">Select</span></th>}
                           <th className="py-3 px-2 font-bold">Tanggal</th>
                           <th className="py-3 px-2 font-bold">Uraian</th>
                           <th className="py-3 px-2 font-bold">Bidang</th>
@@ -956,40 +1008,23 @@ export default function App() {
                             <tr key={t.id} className={`transition-colors ${isDarkMode ? 'hover:bg-slate-800/40 text-slate-200' : 'hover:bg-slate-50 text-slate-700'} ${isSelected ? (isDarkMode ? 'bg-slate-800/60' : 'bg-blue-50') : ''}`}>
                               {sessionUser?.role === 'admin' && (
                                 <td className="py-3.5 px-2 text-center align-middle">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => handleToggleTransaksiSelect(t.id)}
-                                    className="h-4 w-4 accent-[#D4AF37] cursor-pointer"
-                                  />
+                                  <input type="checkbox" checked={isSelected} onChange={() => handleToggleTransaksiSelect(t.id)} className="h-4 w-4 accent-[#D4AF37] cursor-pointer" />
                                 </td>
                               )}
                               <td className="py-3.5 px-2 whitespace-nowrap">{t.date}</td>
                               <td className="py-3.5 px-2 max-w-xs truncate pr-4">{t.uraian}</td>
-                              <td className="py-3.5 px-2">
-                                <span className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-600 text-[10px] font-semibold">{t.bidang}</span>
-                              </td>
-                              <td className={`py-3.5 px-2 text-right font-bold ${t.tipe === 'masuk' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {t.tipe === 'masuk' ? '+' : '-'} {t.jumlah.toLocaleString('id-ID')}
-                              </td>
+                              <td className="py-3.5 px-2"><span className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-600 text-[10px] font-semibold">{t.bidang}</span></td>
+                              <td className={`py-3.5 px-2 text-right font-bold ${t.tipe === 'masuk' ? 'text-emerald-400' : 'text-rose-400'}`}>{t.tipe === 'masuk' ? '+' : '-'} {t.jumlah.toLocaleString('id-ID')}</td>
                               <td className="py-3.5 px-2 text-center">
                                 {sessionUser?.role === 'admin' && (
-                                  <button 
-                                    onClick={() => handleHapusTransaksi(t.id)}
-                                    title="Hapus Data"
-                                    className="text-rose-500 hover:text-white bg-rose-500/10 hover:bg-rose-500 border border-rose-500/50 p-1.5 rounded-md transition-colors inline-flex items-center justify-center"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
+                                  <button onClick={() => handleHapusTransaksi(t.id)} title="Hapus Data" className="text-rose-500 hover:text-white bg-rose-500/10 hover:bg-rose-500 border border-rose-500/50 p-1.5 rounded-md transition-colors inline-flex items-center justify-center"><Trash2 size={14} /></button>
                                 )}
                               </td>
                             </tr>
                           );
                         })}
                         {transaksi.length === 0 && (
-                          <tr>
-                            <td colSpan={sessionUser?.role === 'admin' ? 6 : 5} className="py-8 text-center text-slate-500 font-medium">Belum ada log mutasi.</td>
-                          </tr>
+                          <tr><td colSpan={sessionUser?.role === 'admin' ? 6 : 5} className="py-8 text-center text-slate-500 font-medium">Belum ada log mutasi.</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -999,45 +1034,73 @@ export default function App() {
             </div>
           )}
 
-          {/* VIEW: STATISTIK PEGAWAI (Sisanya tetap sama persis seperti kode sebelumnya) */}
+          {/* VIEW: STATISTIK PEGAWAI */}
           {currentView === 'statistik' && (
              <div className="space-y-6 animate-fadeIn">
+              
+              {/* UPLOAD PANEL */}
               <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div>
                     <h3 className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Import Data Excel Pegawai</h3>
                     <p className={`text-[11px] mt-2 leading-relaxed max-w-2xl ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                      Upload file Excel berisi data pegawai untuk memperbarui visual statistik secara otomatis. Kolom yang didukung antara lain: <span className="text-[#D4AF37] font-semibold">unit</span>, <span className="text-[#D4AF37] font-semibold">gender</span>, <span className="text-[#D4AF37] font-semibold">jabatan</span>, <span className="text-[#D4AF37] font-semibold">pendidikan</span>, <span className="text-[#D4AF37] font-semibold">generasi</span>, <span className="text-[#D4AF37] font-semibold">goldar</span>, dan <span className="text-[#D4AF37] font-semibold">agama</span>.
+                      Cukup upload <span className="text-[#D4AF37] font-semibold">Data All.csv</span> Anda. Sistem otomatis melacak dan mengonversi kolom <span className="text-white font-medium">NIP, Nama, Jabatan, Unit/Bidang, Gender, Pendidikan, Generasi, Goldar,</span> dan <span className="text-white font-medium">Agama</span> menjadi statistik secara dinamis.
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <label className="inline-flex items-center justify-center gap-2 text-center bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 px-5 rounded-xl cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-[#D4AF37]/20 text-xs uppercase tracking-wider">
-                      <input 
-                        type="file" 
-                        accept=".xlsx, .xls" 
-                        onChange={handleImportStatistikExcel} 
-                        className="hidden" 
-                      />
-                      Import Excel Statistik
+                      <input type="file" accept=".csv, .xlsx, .xls" onChange={handleImportStatistikExcel} className="hidden" />
+                      Import Excel / CSV
                     </label>
-                    {statistikExcelRows.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleResetStatistikImport}
-                        className={`inline-flex items-center justify-center gap-2 text-center font-bold py-3 px-5 rounded-xl transition-colors border text-xs uppercase tracking-wider ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}
-                      >
-                        Reset Data
-                      </button>
+                    {statistikExcelFileName && (
+                      <button type="button" onClick={handleResetStatistikImport} className={`inline-flex items-center justify-center gap-2 text-center font-bold py-3 px-5 rounded-xl transition-colors border text-xs uppercase tracking-wider ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}>Reset Data</button>
                     )}
                   </div>
                 </div>
                 {statistikExcelFileName && (
                   <p className={`text-[11px] mt-4 ${isDarkMode ? "text-emerald-300" : "text-slate-600"}`}>
-                    File aktif: <span className={isDarkMode ? "font-semibold text-white" : "font-semibold text-slate-900"}>{statistikExcelFileName}</span> · data visual telah mengikuti hasil import.
+                    File aktif: <span className={isDarkMode ? "font-semibold text-white" : "font-semibold text-slate-900"}>{statistikExcelFileName}</span> · Visualisasi 100% menggunakan data yang diimpor.
                   </p>
                 )}
               </div>
 
+              {/* 4 KARTU RINGKASAN SDM DENGAN DRILL-DOWN MODAL (DIPINDAH KE SINI) */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div onClick={() => setShowPegawaiModal(true)} className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer group theme-panel-light flex items-center gap-4">
+                  <div className="bg-[#D4AF37]/20 p-3.5 rounded-xl text-[#D4AF37] group-hover:scale-110 transition-transform"><Users size={24} /></div>
+                  <div>
+                    <div className="text-2xl font-black text-[#D4AF37]">{daftarPegawai.length}</div>
+                    <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Total Pegawai</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5">(Klik untuk detail)</div>
+                  </div>
+                </div>
+                <div onClick={() => setShowUnitModal(true)} className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer group theme-panel-light flex items-center gap-4">
+                  <div className="bg-blue-500/20 p-3.5 rounded-xl text-blue-400 group-hover:scale-110 transition-transform"><LayoutGrid size={24} /></div>
+                  <div>
+                    <div className="text-2xl font-black text-blue-400">{dataStatistikUnitTampil.length}</div>
+                    <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Bidang / Unit</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5">(Klik untuk detail)</div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4 hover:shadow-xl transition-all">
+                  <div className="bg-indigo-500/20 p-3.5 rounded-xl text-indigo-400"><User size={24} /></div>
+                  <div>
+                    <div className="text-2xl font-black text-indigo-400">{dataStatistikGenderTampil.find(g => g.name === 'Laki-Laki')?.value || 0}</div>
+                    <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Laki-laki</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5">Pegawai</div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4 hover:shadow-xl transition-all">
+                  <div className="bg-rose-500/20 p-3.5 rounded-xl text-rose-400"><User size={24} /></div>
+                  <div>
+                    <div className="text-2xl font-black text-rose-400">{dataStatistikGenderTampil.find(g => g.name === 'Perempuan')?.value || 0}</div>
+                    <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Perempuan</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5">Pegawai</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* GRAFIK STATISTIK */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Sebaran Pegawai per Unit Kerja</h3>
@@ -1053,7 +1116,6 @@ export default function App() {
                     </ResponsiveContainer>
                   </div>
                 </div>
-
                 <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Profil Berdasarkan Generasi</h3>
                   <div className="h-64">
@@ -1068,7 +1130,6 @@ export default function App() {
                     </ResponsiveContainer>
                   </div>
                 </div>
-
                 <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Proporsi Gender Pegawai</h3>
                   <div className="h-64 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -1076,9 +1137,7 @@ export default function App() {
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie data={dataStatistikGenderTampil} cx="50%" cy="50%" innerRadius={45} outerRadius={80} paddingAngle={4} dataKey="value" stroke="none">
-                            {dataStatistikGenderTampil.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
-                            ))}
+                            {dataStatistikGenderTampil.map((entry, index) => (<Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />))}
                           </Pie>
                           <Tooltip contentStyle={chartTooltipStyle} />
                           <Legend verticalAlign="bottom" height={36} iconSize={10} wrapperStyle={chartLegendStyle} />
@@ -1087,16 +1146,13 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-
                 <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Sebaran Golongan Darah</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie data={dataStatistikGoldarTampil} cx="50%" cy="50%" outerRadius={80} dataKey="value" stroke="none">
-                          {dataStatistikGoldarTampil.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={GOLDAR_COLORS[index % GOLDAR_COLORS.length]} />
-                          ))}
+                          {dataStatistikGoldarTampil.map((entry, index) => (<Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />))}
                         </Pie>
                         <Tooltip contentStyle={chartTooltipStyle} />
                         <Legend verticalAlign="bottom" height={36} iconSize={10} wrapperStyle={chartLegendStyle} />
@@ -1118,7 +1174,6 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-
                 <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Struktur Eselonering / Jabatan</h3>
                   <div className="space-y-3 text-xs">
@@ -1132,10 +1187,9 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+              <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Klasifikasi Agama</h3>
-                  <div className="space-y-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                     {dataStatistikAgamaTampil.map((a, idx) => (
                       <div key={idx} className={`flex justify-between items-center p-3 rounded-xl transition-colors ${isDarkMode ? "bg-slate-900/40 border border-slate-700/50 hover:bg-slate-800/60" : "bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"}`}>
                         <span className={`${isDarkMode ? "text-slate-200" : "text-slate-700"} font-medium`}>{a.name}</span>
@@ -1143,16 +1197,6 @@ export default function App() {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
-                  <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Catatan Import</h3>
-                  <div className={`space-y-3 text-[11px] leading-relaxed ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                    <p>• Jika belum ada file Excel, dashboard statistik tetap memakai data bawaan.</p>
-                    <p>• Setelah import, seluruh grafik dan daftar akan mengikuti isi file yang diunggah.</p>
-                    <p>• Klik <span className="text-[#D4AF37] font-semibold">Reset Data</span> untuk kembali ke data awal.</p>
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -1162,17 +1206,12 @@ export default function App() {
             <div className="p-4 max-w-2xl mx-auto w-full animate-fadeIn">
               <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-md theme-surface">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-5">
-                  <div className="p-2 bg-[#D4AF37]/10 rounded-xl">
-                    <Settings className="text-[#D4AF37]" size={24} />
-                  </div>
+                  <div className="p-2 bg-[#D4AF37]/10 rounded-xl"><Settings className="text-[#D4AF37]" size={24} /></div>
                   <h3 className="text-base sm:text-lg font-black text-slate-800">Manajemen Profil Kredensial</h3>
                 </div>
                 {profileSuccess && (
-                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 p-3.5 rounded-xl text-xs text-center font-bold mb-5 shadow-sm">
-                    {profileSuccess}
-                  </div>
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 p-3.5 rounded-xl text-xs text-center font-bold mb-5 shadow-sm">{profileSuccess}</div>
                 )}
-                
                 <form onSubmit={handleSaveProfile} className="space-y-5 text-sm">
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1.5">Nama Lengkap</label>
@@ -1181,130 +1220,76 @@ export default function App() {
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1.5">Ubah Password</label>
                     <div className="relative">
-                      <input 
-                        type={showPassword ? "text" : "password"} 
-                        value={editPassword} 
-                        onChange={(e) => setEditPassword(e.target.value)} 
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 pr-12 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" 
-                        required 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4AF37] focus:outline-none transition-colors"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
+                      <input type={showPassword ? "text" : "password"} value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 pr-12 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" required />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4AF37] focus:outline-none transition-colors">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                     </div>
                   </div>
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1.5">Asal Bagian / Unit Kerja</label>
-                    <select 
-                      value={editUnit} 
-                      onChange={(e) => setEditUnit(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition cursor-pointer"
-                    >
-                      <option>Bagian Umum</option>
-                      <option>PKN</option>
-                      <option>Lelang</option>
-                      <option>KIHI</option>
+                    <select value={editUnit} onChange={(e) => setEditUnit(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition cursor-pointer">
+                      <option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option>
                     </select>
                   </div>
-
                   <div className="pt-6 border-t border-slate-200 flex items-center justify-end gap-3">
-                    <button 
-                      type="button" 
-                      onClick={() => setCurrentView('dashboard')}
-                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-3 rounded-xl transition-colors"
-                    >
-                      Batal
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black px-6 py-3 rounded-xl flex items-center gap-2 transition-transform hover:scale-[1.02] shadow-md text-xs tracking-wider"
-                    >
-                      <UserCheck size={16} /> Simpan Perubahan Profil
-                    </button>
+                    <button type="button" onClick={() => setCurrentView('dashboard')} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-3 rounded-xl transition-colors">Batal</button>
+                    <button type="submit" className="bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black px-6 py-3 rounded-xl flex items-center gap-2 transition-transform hover:scale-[1.02] shadow-md text-xs tracking-wider"><UserCheck size={16} /> Simpan Perubahan Profil</button>
                   </div>
                 </form>
               </div>
             </div>
           )}
-
         </div>
 
-        {/* ==================== MODAL DRILL-DOWN (MUNCUL SAAT CARD DIKLIK) ==================== */}
+        {/* ==================== MODAL DRILL-DOWN ==================== */}
 
-        {/* MODAL 1: DAFTAR PEGAWAI */}
+        {/* MODAL 1: DAFTAR PEGAWAI DINAMIS */}
         {showPegawaiModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-            <div className={`w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
-               
-               {/* Modal Header */}
+            <div className={`w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
                <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
-                  <h3 className={`text-lg font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-slate-800'}`}>Daftar Pegawai (51)</h3>
+                  <h3 className={`text-lg font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-slate-800'}`}>Daftar Pegawai Terpadu ({daftarPegawai.length} Orang)</h3>
                   <button onClick={() => setShowPegawaiModal(false)} className="text-slate-400 hover:text-rose-500 transition-colors p-2"><X size={20}/></button>
                </div>
                
-               {/* Modal Body */}
                <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-                  {/* Search Bar */}
                   <div className="relative mb-6">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search size={16} className="text-slate-400" />
-                    </div>
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search size={16} className="text-slate-400" /></div>
                     <input 
                       type="text" 
-                      placeholder="Cari nama, NIP, atau jabatan..." 
+                      placeholder="Cari berdasarkan nama, NIP, jabatan, atau unit..." 
                       value={searchPegawai}
                       onChange={(e) => setSearchPegawai(e.target.value)}
                       className={`w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none transition-colors border ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-200 focus:border-[#D4AF37]' : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-[#D4AF37]'}`}
                     />
                   </div>
-
-                  {/* Table Daftar Pegawai */}
                   <div className={`rounded-xl border overflow-hidden ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                     <table className="w-full text-left text-xs">
                       <thead className={`border-b ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
                         <tr>
-                          <th className="p-3 font-bold">No</th>
-                          <th className="p-3 font-bold">NIP</th>
-                          <th className="p-3 font-bold">Nama</th>
-                          <th className="p-3 font-bold">Jabatan</th>
-                          <th className="p-3 font-bold">Unit</th>
-                          <th className="p-3 font-bold">Jenis Kelamin</th>
+                          <th className="p-3 font-bold">No</th><th className="p-3 font-bold">NIP</th><th className="p-3 font-bold">Nama</th>
+                          <th className="p-3 font-bold">Jabatan</th><th className="p-3 font-bold">Unit / Bidang</th><th className="p-3 font-bold">Pendidikan</th>
                         </tr>
                       </thead>
                       <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700/50 text-slate-300' : 'divide-slate-200 text-slate-600'}`}>
                         {filteredPegawai.map((p, index) => (
                           <tr key={p.id} className={isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'}>
                             <td className="p-3">{index + 1}</td>
-                            <td className="p-3 font-mono text-[11px]">{p.nip}</td>
+                            <td className="p-3 font-mono text-[11px] text-[#D4AF37]">{p.nip}</td>
                             <td className="p-3 font-semibold">{p.nama}</td>
-                            <td className="p-3">{p.jabatan}</td>
+                            <td className="p-3"><span className="px-2 py-1 bg-slate-500/10 rounded-md">{p.jabatan}</span></td>
                             <td className="p-3">{p.unit}</td>
-                            <td className="p-3">{p.jk}</td>
+                            <td className="p-3">{p.pendidikan}</td>
                           </tr>
                         ))}
+                        {filteredPegawai.length === 0 && (
+                          <tr><td colSpan="6" className="py-8 text-center text-slate-500">Pencarian "{searchPegawai}" tidak ditemukan pada data ini.</td></tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
-
-                  {/* Pagination Dummy Indicator */}
-                  <div className="flex items-center justify-center gap-2 mt-6 text-xs font-semibold text-slate-500">
-                     <button className="px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800">&lt;</button>
-                     <button className="px-3 py-1 rounded bg-[#D4AF37] text-white">1</button>
-                     <button className="px-3 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800">2</button>
-                     <button className="px-3 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800">3</button>
-                     <span>...</span>
-                     <button className="px-3 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800">13</button>
-                     <button className="px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800">&gt;</button>
-                  </div>
                </div>
-
-               {/* Modal Footer */}
                <div className="p-4 border-t border-slate-700/50 flex justify-end">
-                  <button onClick={() => setShowPegawaiModal(false)} className="px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-colors">Tutup</button>
+                  <button onClick={() => setShowPegawaiModal(false)} className="px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-colors">Tutup Jendela</button>
                </div>
             </div>
           </div>
@@ -1314,17 +1299,11 @@ export default function App() {
         {showUnitModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
             <div className={`w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
-               
-               {/* Modal Header */}
                <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
                   <h3 className={`text-lg font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-slate-800'}`}>Detail Unit: Bidang PKN</h3>
                   <button onClick={() => setShowUnitModal(false)} className="text-slate-400 hover:text-rose-500 transition-colors p-2"><X size={20}/></button>
                </div>
-               
-               {/* Modal Body */}
                <div className="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-6">
-                  
-                  {/* Info Cards Row */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                      <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Total Pegawai</span>
@@ -1332,7 +1311,7 @@ export default function App() {
                      </div>
                      <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Realisasi</span>
-                        <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Rp 18.450.000.000</span>
+                        <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Rp 18.45 Miliar</span>
                      </div>
                      <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Persentase</span>
@@ -1343,8 +1322,6 @@ export default function App() {
                         <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>24</span>
                      </div>
                   </div>
-
-                  {/* Grafik Detail Unit */}
                   <div className={`p-5 rounded-xl border ${isDarkMode ? 'bg-slate-800/30 border-slate-700' : 'bg-white border-slate-200'}`}>
                     <h4 className={`text-xs font-bold mb-4 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Grafik Realisasi Unit</h4>
                     <div className="h-48 w-full">
@@ -1359,10 +1336,7 @@ export default function App() {
                       </ResponsiveContainer>
                     </div>
                   </div>
-
                </div>
-
-               {/* Modal Footer */}
                <div className="p-4 border-t border-slate-700/50 flex justify-end">
                   <button onClick={() => setShowUnitModal(false)} className="px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-colors">Tutup</button>
                </div>
