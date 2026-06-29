@@ -1,4 +1,6 @@
 import * as XLSX from 'xlsx';
+import { auth } from './firebaseConfig';
+import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   LayoutDashboard, TrendingUp, Bell, User, LogOut, Home,
@@ -16,6 +18,29 @@ const dataProporsi = [
 ];
 const COLORS = ['#D4AF37', '#1E3A8A', '#0F172A', '#94A3B8'];
 const PIE_COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1'];
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC5HMHb0GUG84D9zazMQCBimhzbHGVhJps",
+  authDomain: "sipka-djkn.firebaseapp.com",
+  projectId: "sipka-djkn",
+  storageBucket: "sipka-djkn.firebasestorage.app",
+  messagingSenderId: "561069433247",
+  appId: "1:561069433247:web:c83f50694a3a29e9019daa",
+  measurementId: "G-FSMMB077BD"
+};
+
+
+const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    // Meminta verifikasi ke server Google
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    alert("Login Berhasil! Selamat datang.");
+    // Setelah berhasil, arahkan ke dashboard
+  } catch (error) {
+    alert("Email atau Password salah!");
+  }
+};
 
 // ==================== [2] GENERATOR DATA DEFAULT (SEBELUM IMPORT) ====================
 const generatePegawaiData = () => {
@@ -272,14 +297,42 @@ export default function App() {
     setDatabaseUsers(updatedDB); setProfileSuccess('Profil Anda berhasil diperbarui!'); setTimeout(() => setProfileSuccess(''), 3000);
   };
 
-  const handleTambahTransaksi = (e) => {
-    e.preventDefault();
-    if (sessionUser?.role !== 'admin') return alert('Akses ditolak!');
-    if (!uraianInput || !nominalInput) return alert('Mohon isi semua data!');
-    const tglHariIni = new Date().toLocaleDateString('id-ID');
-    const transaksiBaru = { id: Date.now(), date: tglHariIni, uraian: uraianInput, akun: tipeInput === 'masuk' ? '425111' : '521111', bidang: bidangInput, jumlah: parseFloat(nominalInput), tipe: tipeInput };
-    setTransaksi([transaksiBaru, ...transaksi]); setUraianInput(''); setNominalInput('');
+const handleTambahTransaksi = async (e) => {
+  e.preventDefault();
+  
+  // 1. Validasi Awal
+  if (sessionUser?.role !== 'admin') return alert('Akses ditolak!');
+  if (!uraianInput || !nominalInput) return alert('Mohon isi semua data!');
+
+  // 2. Siapkan data yang akan dikirim
+  const dataTransaksi = {
+    date: new Date().toLocaleDateString('id-ID'),
+    uraian: uraianInput,
+    akun: tipeInput === 'masuk' ? '425111' : '521111',
+    bidang: bidangInput,
+    jumlah: parseFloat(nominalInput),
+    tipe: tipeInput,
+    timestamp: new Date() // Penting untuk urutan waktu di database
   };
+
+  try {
+    // 3. Simpan ke Firebase (Server)
+    const docRef = await addDoc(collection(db, "transaksi"), dataTransaksi);
+    
+    // 4. Update tampilan (State lokal) agar langsung muncul tanpa reload
+    // Kita gunakan docRef.id dari Firebase sebagai ID unik
+    setTransaksi([{ id: docRef.id, ...dataTransaksi }, ...transaksi]);
+    
+    // 5. Reset input
+    setUraianInput(''); 
+    setNominalInput('');
+    alert('Data berhasil disimpan ke cloud!');
+
+  } catch (error) {
+    console.error("Error menambah dokumen: ", error);
+    alert('Gagal menyimpan ke database. Cek koneksi internet Anda.');
+  }
+};
 
   const handleHapusTransaksi = (id) => {
     if (typeof id === 'number') {
