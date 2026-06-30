@@ -1,6 +1,4 @@
 import * as XLSX from 'xlsx';
-import { auth } from './firebaseConfig';
-import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   LayoutDashboard, TrendingUp, Bell, User, LogOut, Home,
@@ -18,29 +16,6 @@ const dataProporsi = [
 ];
 const COLORS = ['#D4AF37', '#1E3A8A', '#0F172A', '#94A3B8'];
 const PIE_COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1'];
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC5HMHb0GUG84D9zazMQCBimhzbHGVhJps",
-  authDomain: "sipka-djkn.firebaseapp.com",
-  projectId: "sipka-djkn",
-  storageBucket: "sipka-djkn.firebasestorage.app",
-  messagingSenderId: "561069433247",
-  appId: "1:561069433247:web:c83f50694a3a29e9019daa",
-  measurementId: "G-FSMMB077BD"
-};
-
-
-const handleLogin = async (e) => {
-  e.preventDefault();
-  try {
-    // Meminta verifikasi ke server Google
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    alert("Login Berhasil! Selamat datang.");
-    // Setelah berhasil, arahkan ke dashboard
-  } catch (error) {
-    alert("Email atau Password salah!");
-  }
-};
 
 // ==================== [2] GENERATOR DATA DEFAULT (SEBELUM IMPORT) ====================
 const generatePegawaiData = () => {
@@ -119,6 +94,64 @@ const THEME_STYLE = `
 .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
 @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .animate-popIn { animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* ===== Peningkatan Interaktif & Aksesibilitas (tambahan, tidak mengubah class lama) ===== */
+
+/* Transisi halus saat ganti tema gelap/terang */
+.theme-root, .theme-root * { transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease; }
+
+/* Ring fokus yang jelas untuk navigasi keyboard (aksesibilitas) */
+.theme-root button:focus-visible,
+.theme-root a:focus-visible,
+.theme-root input:focus-visible,
+.theme-root select:focus-visible,
+.theme-root label:focus-within {
+  outline: 2px solid #D4AF37;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Micro-interaction tombol: sedikit mengecil saat ditekan, terasa lebih responsif */
+.btn-press { transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease, filter 0.15s ease; }
+.btn-press:active:not(:disabled) { transform: scale(0.97); }
+.btn-press:hover:not(:disabled) { filter: brightness(1.04); }
+
+/* Kartu naik halus saat hover + bayangan emas lembut */
+.card-hover { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease; }
+.card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 45px -12px rgba(212, 175, 55, 0.25); }
+
+/* Skeleton shimmer loader, untuk state loading data/import */
+@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(148,163,184,0.15) 25%, rgba(212,175,55,0.25) 37%, rgba(148,163,184,0.15) 63%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Spinner kecil untuk tombol/aksi async */
+@keyframes spin-smooth { to { transform: rotate(360deg); } }
+.spinner-icon { animation: spin-smooth 0.8s linear infinite; }
+
+/* Animasi masuk bertahap untuk daftar/grid (stagger) */
+@keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-riseIn { animation: riseIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Highlight baris tabel saat baru ditambahkan */
+@keyframes highlightRow { 0% { background-color: rgba(212, 175, 55, 0.35); } 100% { background-color: transparent; } }
+.row-highlight-new { animation: highlightRow 1.8s ease-out; }
+
+/* Garis progres tipis di kartu statistik */
+@keyframes growWidth { from { width: 0%; } }
+.progress-grow { animation: growWidth 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Efek pulse halus untuk indikator status/live */
+@keyframes softPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.pulse-dot { animation: softPulse 2s ease-in-out infinite; }
+
+/* Hormati preferensi pengguna yang sensitif terhadap gerakan */
+@media (prefers-reduced-motion: reduce) {
+  .theme-root, .theme-root * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
 `;
 
 export default function App() {
@@ -129,12 +162,90 @@ export default function App() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [sessionUser, setSessionUser] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
-  const [showPassword, setShowPassword] = useState(false); 
-  
+  const [showPassword, setShowPassword] = useState(false);
+
+  // ---- STATE & HANDLER: FITUR LUPA PASSWORD (STEPPER MODAL) ----
+  const [showForgotModal, setShowForgotModal]             = useState(false);
+  const [forgotStep, setForgotStep]                       = useState('cariAkun'); // 'cariAkun' | 'verifikasiEmail' | 'resetPassword' | 'selesai'
+  const [forgotUsernameInput, setForgotUsernameInput]     = useState('');
+  const [forgotEmailInput, setForgotEmailInput]           = useState('');
+  const [forgotNewPassword, setForgotNewPassword]         = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [forgotShowNewPass, setForgotShowNewPass]         = useState(false);
+  const [forgotShowConfPass, setForgotShowConfPass]       = useState(false);
+  const [forgotFoundUser, setForgotFoundUser]             = useState(null);
+
+  const fpPassLen      = forgotNewPassword.length >= 8;
+  const fpPassUL       = /[A-Z]/.test(forgotNewPassword) && /[a-z]/.test(forgotNewPassword);
+  const fpPassNum      = /\d/.test(forgotNewPassword);
+  const fpPassSym      = /[^A-Za-z0-9]/.test(forgotNewPassword);
+  const fpPassValid    = fpPassLen && fpPassUL && fpPassNum && fpPassSym;
+  const fpPassStrength = [fpPassLen, fpPassUL, fpPassNum, fpPassSym].filter(Boolean).length;
+  const fpPassMatch    = forgotConfirmPassword.length > 0 && forgotConfirmPassword === forgotNewPassword;
+
+  const resetForgotModal = () => {
+    setForgotStep('cariAkun');
+    setForgotUsernameInput(''); setForgotEmailInput('');
+    setForgotNewPassword(''); setForgotConfirmPassword('');
+    setForgotFoundUser(null);
+    setForgotShowNewPass(false); setForgotShowConfPass(false);
+  };
+  const closeForgotModal = () => { setShowForgotModal(false); resetForgotModal(); };
+
+  const handleForgotStep1 = (e) => {
+    e.preventDefault();
+    const q = forgotUsernameInput.trim().toLowerCase();
+    const found = databaseUsers.find(u => u.username.toLowerCase() === q || u.email?.toLowerCase() === q);
+    if (!found) { showToast('Akun tidak ditemukan. Periksa kembali Username atau Email Anda.', 'error'); return; }
+    setForgotFoundUser(found);
+    setForgotStep('verifikasiEmail');
+  };
+
+  const handleForgotStep2 = (e) => {
+    e.preventDefault();
+    if (forgotEmailInput.trim().toLowerCase() !== forgotFoundUser?.email?.toLowerCase()) {
+      showToast('Email tidak cocok dengan akun yang terdaftar.', 'error'); return;
+    }
+    setForgotStep('resetPassword');
+  };
+
+  const handleForgotStep3 = (e) => {
+    e.preventDefault();
+    if (!fpPassValid) { showToast('Password baru tidak memenuhi kriteria keamanan.', 'error'); return; }
+    if (!fpPassMatch) { showToast('Konfirmasi password tidak cocok.', 'error'); return; }
+    setDatabaseUsers(prev => prev.map(u =>
+      u.username === forgotFoundUser.username ? { ...u, password: forgotNewPassword } : u
+    ));
+    if (sessionUser?.username === forgotFoundUser.username) {
+      const updated = { ...sessionUser, password: forgotNewPassword };
+      setSessionUser(updated);
+      localStorage.setItem('djkn_session', JSON.stringify(updated));
+    }
+    setForgotStep('selesai');
+  };
+
+  useEffect(() => {
+    if (!showForgotModal) return;
+    const onKey = (e) => { if (e.key === 'Escape') closeForgotModal(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showForgotModal]);
+
   // State untuk Drill-Down Modals
   const [showPegawaiModal, setShowPegawaiModal] = useState(false);
   const [showUnitModal, setShowUnitModal] = useState(false);
   const [searchPegawai, setSearchPegawai] = useState('');
+  const [searchTransaksi, setSearchTransaksi] = useState('');
+
+  // Menutup modal drill-down dengan tombol Escape (kenyamanan & aksesibilitas keyboard)
+  useEffect(() => {
+    if (!showPegawaiModal && !showUnitModal) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') { setShowPegawaiModal(false); setShowUnitModal(false); }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showPegawaiModal, showUnitModal]);
 
   // DATA MASTER PEGAWAI (Dinamis dari Upload Excel)
   const [daftarPegawai, setDaftarPegawai] = useState(() => generatePegawaiData());
@@ -297,41 +408,38 @@ export default function App() {
     setDatabaseUsers(updatedDB); setProfileSuccess('Profil Anda berhasil diperbarui!'); setTimeout(() => setProfileSuccess(''), 3000);
   };
 
-const handleTambahTransaksi = async (e) => {
+const [isSavingTransaksi, setIsSavingTransaksi] = useState(false);
+const [lastAddedTransaksiId, setLastAddedTransaksiId] = useState(null);
+const handleTambahTransaksi = (e) => {
   e.preventDefault();
-  
-  // 1. Validasi Awal
-  if (sessionUser?.role !== 'admin') return alert('Akses ditolak!');
-  if (!uraianInput || !nominalInput) return alert('Mohon isi semua data!');
 
-  // 2. Siapkan data yang akan dikirim
+  // 1. Validasi Awal
+  if (sessionUser?.role !== 'admin') return showToast('Akses ditolak! Hanya Admin yang dapat menambah data.', 'error');
+  if (!uraianInput || !nominalInput) return showToast('Mohon isi Uraian dan Nominal terlebih dahulu!', 'error');
+  if (parseFloat(nominalInput) <= 0) return showToast('Nominal harus lebih besar dari 0!', 'error');
+
+  // 2. Siapkan data baru
   const dataTransaksi = {
+    id: Date.now() + Math.random(),
     date: new Date().toLocaleDateString('id-ID'),
     uraian: uraianInput,
     akun: tipeInput === 'masuk' ? '425111' : '521111',
     bidang: bidangInput,
     jumlah: parseFloat(nominalInput),
     tipe: tipeInput,
-    timestamp: new Date() // Penting untuk urutan waktu di database
   };
 
-  try {
-    // 3. Simpan ke Firebase (Server)
-    const docRef = await addDoc(collection(db, "transaksi"), dataTransaksi);
-    
-    // 4. Update tampilan (State lokal) agar langsung muncul tanpa reload
-    // Kita gunakan docRef.id dari Firebase sebagai ID unik
-    setTransaksi([{ id: docRef.id, ...dataTransaksi }, ...transaksi]);
-    
-    // 5. Reset input
-    setUraianInput(''); 
+  // 3. Simulasikan jeda singkat agar transisi loading terlihat halus, lalu simpan ke state lokal (otomatis tersimpan ke localStorage lewat useEffect)
+  setIsSavingTransaksi(true);
+  setTimeout(() => {
+    setTransaksi((prev) => [dataTransaksi, ...prev]);
+    setUraianInput('');
     setNominalInput('');
-    alert('Data berhasil disimpan ke cloud!');
-
-  } catch (error) {
-    console.error("Error menambah dokumen: ", error);
-    alert('Gagal menyimpan ke database. Cek koneksi internet Anda.');
-  }
+    setIsSavingTransaksi(false);
+    setLastAddedTransaksiId(dataTransaksi.id);
+    setTimeout(() => setLastAddedTransaksiId(null), 2000);
+    showToast('Transaksi berhasil disimpan!', 'success');
+  }, 350);
 };
 
   const handleHapusTransaksi = (id) => {
@@ -351,9 +459,11 @@ const handleTambahTransaksi = async (e) => {
   const handleSelectAllTransaksi = () => { if (selectedTransaksi.length === transaksi.length) { setSelectedTransaksi([]); } else { setSelectedTransaksi(transaksi.map((t) => t.id)); } };
 
   // --- IMPORT EXCEL TRANSAKSI KEUANGAN ---
+  const [isImportingTransaksi, setIsImportingTransaksi] = useState(false);
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    setIsImportingTransaksi(true);
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
@@ -380,16 +490,18 @@ const handleTambahTransaksi = async (e) => {
           }
           return { id: Date.now() + Math.random(), date: parsedTanggal, uraian: String(rawUraian), akun: String(rawAkun), bidang: String(rawBidang), jumlah: parsedJumlah, tipe: tipeTrans };
         });
-        setTransaksi([...dataBaru, ...transaksi]); alert(`Berhasil mengimpor ${dataBaru.length} data dengan sempurna!`);
-      } catch (error) { alert("Gagal membaca file. Pastikan format Excel Anda benar."); } finally { e.target.value = ''; }
+        setTransaksi([...dataBaru, ...transaksi]); showToast(`Berhasil mengimpor ${dataBaru.length} data dengan sempurna!`, 'success');
+      } catch (error) { showToast("Gagal membaca file. Pastikan format Excel Anda benar.", 'error'); } finally { e.target.value = ''; setIsImportingTransaksi(false); }
     };
     reader.readAsBinaryString(file);
   };
 
   // --- IMPORT EXCEL STATISTIK PEGAWAI (DINAMIS & ROBUST) ---
+  const [isImportingStatistik, setIsImportingStatistik] = useState(false);
   const handleImportStatistikExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    setIsImportingStatistik(true);
 
     const getEselonCat = (jabatan) => {
       const j = String(jabatan).toLowerCase();
@@ -423,7 +535,7 @@ const handleTambahTransaksi = async (e) => {
         }
 
         if (headerRowIndex === -1) { 
-           alert('Kolom Nama/NIP tidak ditemukan. Pastikan Anda mengunggah sheet data pegawai yang valid.'); 
+           showToast('Kolom Nama/NIP tidak ditemukan. Pastikan Anda mengunggah sheet data pegawai yang valid.', 'error'); 
            return; 
         }
 
@@ -470,11 +582,12 @@ const handleTambahTransaksi = async (e) => {
 
         setDaftarPegawai(parsedData); 
         setStatistikExcelFileName(file.name); 
-        alert(`Berhasil mengimpor ${parsedData.length} data pegawai! Statistik & Daftar Pegawai telah diupdate otomatis.`);
+        showToast(`Berhasil mengimpor ${parsedData.length} data pegawai! Statistik & Daftar Pegawai telah diupdate otomatis.`, 'success');
       } catch (error) { 
-        alert('Gagal membaca file statistik. Pastikan file Excel valid dan tidak rusak.'); 
+        showToast('Gagal membaca file statistik. Pastikan file Excel valid dan tidak rusak.', 'error'); 
       } finally { 
         e.target.value = ''; 
+        setIsImportingStatistik(false);
       }
     };
     reader.readAsBinaryString(file);
@@ -482,7 +595,8 @@ const handleTambahTransaksi = async (e) => {
 
   const handleResetStatistikImport = () => { 
     setDaftarPegawai(generatePegawaiData()); 
-    setStatistikExcelFileName(''); 
+    setStatistikExcelFileName('');
+    showToast('Data pegawai dikembalikan ke data contoh.', 'success');
   };
   
   const scrollToSection = (id) => { setIsLandingMobileMenuOpen(false); const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); };
@@ -516,16 +630,23 @@ const handleTambahTransaksi = async (e) => {
     p.unit.toLowerCase().includes(searchPegawai.toLowerCase())
   );
 
+  const filteredTransaksi = useMemo(() => {
+    if (!searchTransaksi.trim()) return transaksi;
+    const q = searchTransaksi.toLowerCase();
+    return transaksi.filter(t => t.uraian.toLowerCase().includes(q) || t.bidang.toLowerCase().includes(q));
+  }, [transaksi, searchTransaksi]);
+
   // ==================== VIEW: KOMPONEN TOAST ====================
   const ToastNotification = () => {
     if (!toast.show) return null;
     const isSuccess = toast.type === 'success';
     return (
-      <div className="fixed top-6 right-6 z-[100] toast-animate">
-        <div className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border ${isSuccess ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-          {isSuccess ? <CheckCircle size={20} className="text-emerald-500" /> : <AlertCircle size={20} className="text-red-500" />}
-          <p className="text-sm font-bold tracking-wide">{toast.message}</p>
-          <button onClick={() => setToast({ show: false })} className="ml-2 hover:opacity-70"><X size={16}/></button>
+      <div className="fixed top-6 right-6 z-[100] toast-animate max-w-[calc(100vw-3rem)]">
+        <div className={`relative overflow-hidden flex items-center gap-3 pl-4 pr-3 py-4 rounded-2xl shadow-2xl border ${isSuccess ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+          <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isSuccess ? 'bg-emerald-500' : 'bg-red-500'}`} />
+          {isSuccess ? <CheckCircle size={20} className="text-emerald-500 shrink-0" /> : <AlertCircle size={20} className="text-red-500 shrink-0" />}
+          <p className="text-sm font-bold tracking-wide leading-snug">{toast.message}</p>
+          <button onClick={() => setToast({ show: false })} className="ml-2 p-1 rounded-full hover:bg-black/5 hover:opacity-70 transition-colors shrink-0"><X size={16}/></button>
         </div>
       </div>
     );
@@ -537,7 +658,247 @@ const handleTambahTransaksi = async (e) => {
       return (
         <div className="flex min-h-screen w-full items-center justify-center bg-slate-100 font-sans relative overflow-hidden p-4">
           <ToastNotification />
-          
+
+        {/* ===== MODAL: LUPA PASSWORD (STEPPER 3 LANGKAH) ===== */}
+        {showForgotModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={closeForgotModal}>
+            <div onClick={e => e.stopPropagation()} className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-popIn">
+
+              {/* ── HEADER ── */}
+              <div className="bg-gradient-to-r from-[#051622] to-[#0f2744] px-6 pt-6 pb-5">
+                <div className="flex items-start justify-between mb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-[#D4AF37]/20 rounded-xl shrink-0">
+                      <Lock size={18} className="text-[#D4AF37]" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-black text-base leading-tight">Pemulihan Akun</h3>
+                      <p className="text-slate-400 text-[10px] mt-0.5 tracking-wide">
+                        {forgotStep === 'cariAkun'        && 'Identifikasi akun yang akan dipulihkan'}
+                        {forgotStep === 'verifikasiEmail' && 'Konfirmasi kepemilikan akun via email'}
+                        {forgotStep === 'resetPassword'   && 'Buat password baru yang aman'}
+                        {forgotStep === 'selesai'         && 'Akun berhasil dipulihkan'}
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={closeForgotModal} aria-label="Tutup" className="btn-press text-slate-500 hover:text-white hover:rotate-90 p-1.5 rounded-full hover:bg-white/10 shrink-0 mt-0.5 transition-all duration-300">
+                    <X size={17} />
+                  </button>
+                </div>
+
+                {/* Step indicator visual — 3 lingkaran bernomor + garis */}
+                {forgotStep !== 'selesai' && (
+                  <div className="flex items-center gap-0">
+                    {[
+                      { n: 1, label: 'Identifikasi', key: 'cariAkun' },
+                      { n: 2, label: 'Verifikasi',   key: 'verifikasiEmail' },
+                      { n: 3, label: 'Reset',        key: 'resetPassword' },
+                    ].map((s, i) => {
+                      const isActive = forgotStep === s.key;
+                      const isDone   = (forgotStep === 'verifikasiEmail' && s.n === 1) ||
+                                       (forgotStep === 'resetPassword'   && s.n <= 2);
+                      return (
+                        <React.Fragment key={s.key}>
+                          <div className="flex flex-col items-center gap-1.5 flex-1">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all duration-300 ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : isActive ? 'bg-[#D4AF37] border-[#D4AF37] text-[#051622]' : 'bg-transparent border-slate-600 text-slate-500'}`}>
+                              {isDone ? <CheckCircle size={14} /> : s.n}
+                            </div>
+                            <span className={`text-[9px] font-bold tracking-wider ${isActive ? 'text-[#D4AF37]' : isDone ? 'text-emerald-400' : 'text-slate-600'}`}>{s.label}</span>
+                          </div>
+                          {i < 2 && (
+                            <div className={`flex-1 h-0.5 mb-5 transition-all duration-500 ${isDone ? 'bg-emerald-500' : 'bg-slate-700'}`} />
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* ── BODY ── */}
+              <div className="p-6">
+
+                {/* STEP 1 — IDENTIFIKASI AKUN */}
+                {forgotStep === 'cariAkun' && (
+                  <form onSubmit={handleForgotStep1} className="space-y-5 animate-fadeIn">
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-3.5 flex gap-3 items-start">
+                      <AlertCircle size={15} className="text-blue-500 mt-0.5 shrink-0" />
+                      <p className="text-blue-700 text-xs leading-relaxed">Masukkan <strong>Username</strong> atau <strong>Email institusi</strong> yang terdaftar. Sistem akan memverifikasi kepemilikan akun Anda.</p>
+                    </div>
+                    <div>
+                      <label className="text-slate-700 font-bold block mb-1.5 text-sm">Username atau Email Terdaftar</label>
+                      <input
+                        type="text"
+                        autoFocus
+                        value={forgotUsernameInput}
+                        onChange={e => setForgotUsernameInput(e.target.value)}
+                        placeholder="Cth: david_djkn atau david@kemenkeu.go.id"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 text-sm focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-400"
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-1">
+                      <button type="button" onClick={closeForgotModal} className="btn-press flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm">Batal</button>
+                      <button type="submit" className="btn-press flex-1 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                        Temukan Akun <ArrowUpRight size={14} />
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* STEP 2 — VERIFIKASI EMAIL */}
+                {forgotStep === 'verifikasiEmail' && (
+                  <form onSubmit={handleForgotStep2} className="space-y-5 animate-fadeIn">
+                    {/* Kartu info akun yang ditemukan */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#17375f] to-[#1d4f86] flex items-center justify-center text-[#D4AF37] font-black text-base shrink-0">
+                        {forgotFoundUser?.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-slate-800 font-bold text-sm truncate">{forgotFoundUser?.name}</p>
+                        <p className="text-slate-500 text-[11px] mt-0.5">@{forgotFoundUser?.username} · {forgotFoundUser?.unit}</p>
+                      </div>
+                      <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full shrink-0">Ditemukan</span>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-3.5 flex gap-3 items-start">
+                      <AlertCircle size={15} className="text-amber-500 mt-0.5 shrink-0" />
+                      <p className="text-amber-700 text-xs leading-relaxed">Untuk membuktikan kepemilikan, masukkan <strong>email institusi</strong> yang terdaftar pada akun ini. Email bersifat rahasia — hanya pemilik yang mengetahuinya.</p>
+                    </div>
+
+                    <div>
+                      <label className="text-slate-700 font-bold block mb-1.5 text-sm">Email Institusi Terdaftar</label>
+                      <input
+                        type="email"
+                        autoFocus
+                        value={forgotEmailInput}
+                        onChange={e => setForgotEmailInput(e.target.value)}
+                        placeholder="Cth: nama@kemenkeu.go.id"
+                        className={`w-full bg-slate-50 border rounded-xl p-3.5 text-slate-900 text-sm focus:outline-none transition-all ${forgotEmailInput.length > 0 ? (forgotEmailInput.toLowerCase().endsWith('@kemenkeu.go.id') ? 'border-emerald-400 ring-1 ring-emerald-300' : 'border-slate-300') : 'border-slate-300 hover:border-slate-400 focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30'}`}
+                        required
+                      />
+                      {forgotEmailInput.length > 0 && forgotEmailInput.toLowerCase().endsWith('@kemenkeu.go.id') && (
+                        <p className="text-[10px] mt-1.5 text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle size={10} /> Format email valid</p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 pt-1">
+                      <button type="button" onClick={() => { setForgotStep('cariAkun'); setForgotEmailInput(''); }} className="btn-press flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm">← Kembali</button>
+                      <button type="submit" className="btn-press flex-1 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                        Verifikasi <ArrowUpRight size={14} />
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* STEP 3 — RESET PASSWORD */}
+                {forgotStep === 'resetPassword' && (
+                  <form onSubmit={handleForgotStep3} className="space-y-4 animate-fadeIn">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-center gap-2.5">
+                      <CheckCircle size={16} className="text-emerald-600 shrink-0" />
+                      <p className="text-emerald-700 text-xs font-semibold leading-snug">Identitas terverifikasi. Sekarang buat password baru yang kuat untuk akun <strong>@{forgotFoundUser?.username}</strong>.</p>
+                    </div>
+
+                    {/* Password baru */}
+                    <div>
+                      <label className="text-slate-700 font-bold block mb-1.5 text-sm">Password Baru</label>
+                      <div className="relative">
+                        <input
+                          type={forgotShowNewPass ? 'text' : 'password'}
+                          autoFocus
+                          value={forgotNewPassword}
+                          onChange={e => setForgotNewPassword(e.target.value)}
+                          placeholder="Min. 8 karakter"
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 pr-12 text-slate-900 text-sm focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-400"
+                          required
+                        />
+                        <button type="button" onClick={() => setForgotShowNewPass(p => !p)} className="btn-press absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4AF37]">
+                          {forgotShowNewPass ? <EyeOff size={17} /> : <Eye size={17} />}
+                        </button>
+                      </div>
+                      {/* Strength bar + checklist */}
+                      {forgotNewPassword.length > 0 && (
+                        <div className="mt-2.5 space-y-2">
+                          <div className="flex gap-1">
+                            {[1,2,3,4].map(n => (
+                              <div key={n} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${fpPassStrength >= n ? (fpPassStrength <= 1 ? 'bg-red-400' : fpPassStrength === 2 ? 'bg-orange-400' : fpPassStrength === 3 ? 'bg-yellow-400' : 'bg-emerald-500') : 'bg-slate-200'}`} />
+                            ))}
+                          </div>
+                          <p className={`text-[10px] font-bold ${fpPassStrength <= 1 ? 'text-red-500' : fpPassStrength === 2 ? 'text-orange-500' : fpPassStrength === 3 ? 'text-yellow-600' : 'text-emerald-600'}`}>
+                            {fpPassStrength <= 1 ? 'Lemah' : fpPassStrength === 2 ? 'Cukup' : fpPassStrength === 3 ? 'Baik' : '✓ Kuat — Siap digunakan'}
+                          </p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                            {[['≥ 8 karakter', fpPassLen], ['Huruf besar & kecil', fpPassUL], ['Mengandung angka', fpPassNum], ['Karakter khusus (!@#)', fpPassSym]].map(([label, ok]) => (
+                              <p key={label} className={`text-[10px] flex items-center gap-1 transition-colors ${ok ? 'text-emerald-600 font-semibold' : 'text-slate-400'}`}>
+                                {ok ? <CheckCircle size={10} className="shrink-0" /> : <AlertCircle size={10} className="shrink-0" />} {label}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Konfirmasi password */}
+                    <div>
+                      <label className="text-slate-700 font-bold block mb-1.5 text-sm">Konfirmasi Password Baru</label>
+                      <div className="relative">
+                        <input
+                          type={forgotShowConfPass ? 'text' : 'password'}
+                          value={forgotConfirmPassword}
+                          onChange={e => setForgotConfirmPassword(e.target.value)}
+                          placeholder="Ulangi password baru"
+                          className={`w-full bg-slate-50 border rounded-xl p-3.5 pr-12 text-slate-900 text-sm focus:outline-none transition-all ${forgotConfirmPassword.length > 0 ? (fpPassMatch ? 'border-emerald-500 ring-2 ring-emerald-300/60' : 'border-red-400 ring-2 ring-red-300/60') : 'border-slate-300 hover:border-slate-400 focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30'}`}
+                          required
+                        />
+                        <button type="button" onClick={() => setForgotShowConfPass(p => !p)} className="btn-press absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4AF37]">
+                          {forgotShowConfPass ? <EyeOff size={17} /> : <Eye size={17} />}
+                        </button>
+                      </div>
+                      {forgotConfirmPassword.length > 0 && (
+                        <p className={`text-[10px] mt-1.5 flex items-center gap-1 font-semibold ${fpPassMatch ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {fpPassMatch ? <><CheckCircle size={10} /> Password cocok dan siap disimpan</> : <><AlertCircle size={10} /> Password tidak cocok</>}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 pt-1">
+                      <button type="button" onClick={() => { setForgotStep('verifikasiEmail'); setForgotNewPassword(''); setForgotConfirmPassword(''); }} className="btn-press flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm">← Kembali</button>
+                      <button type="submit" disabled={!fpPassValid || !fpPassMatch} className="btn-press flex-1 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-[#051622] font-black py-3 rounded-xl text-sm shadow-md flex items-center justify-center gap-2">
+                        <CheckCircle size={14} /> Simpan Password
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* STEP SELESAI */}
+                {forgotStep === 'selesai' && (
+                  <div className="text-center space-y-5 py-3 animate-popIn">
+                    {/* Animasi lingkaran centang */}
+                    <div className="relative mx-auto w-20 h-20">
+                      <div className="absolute inset-0 rounded-full bg-emerald-100 animate-ping opacity-30" />
+                      <div className="relative w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <CheckCircle size={38} className="text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-slate-800 font-black text-lg">Password Berhasil Diperbarui!</h4>
+                      <p className="text-slate-500 text-sm mt-2 leading-relaxed">Password akun <strong className="text-slate-700">@{forgotFoundUser?.username}</strong> telah berhasil diganti. Gunakan password baru Anda untuk masuk.</p>
+                    </div>
+                    {/* Info keamanan */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-left flex gap-3 items-start">
+                      <Shield size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                      <p className="text-slate-500 text-[11px] leading-relaxed">Demi keamanan, jangan bagikan password kepada siapapun termasuk petugas IT. Gunakan password berbeda untuk setiap akun.</p>
+                    </div>
+                    <button onClick={closeForgotModal} className="btn-press w-full bg-gradient-to-r from-[#051622] to-[#0f2744] hover:from-[#0f2744] hover:to-[#1d4f86] text-white font-black py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all">
+                      <Lock size={15} /> Masuk dengan Password Baru
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
           <div className={`w-full bg-white border border-slate-200 p-8 shadow-2xl rounded-3xl z-10 transition-all duration-500 ${isRegisterMode ? 'max-w-4xl' : 'max-w-md'}`}>
             <button onClick={() => setShowAuthForm(false)} className="text-slate-400 hover:text-slate-700 flex items-center gap-2 mb-8 transition-colors text-sm font-semibold">
               <ArrowLeft size={16} /> Kembali ke Beranda
@@ -677,21 +1038,21 @@ const handleTambahTransaksi = async (e) => {
               <form onSubmit={handleLogin} className="space-y-5 text-sm animate-fadeIn">
                 <div>
                   <label className="text-slate-700 font-bold block mb-1.5">Username / Email</label>
-                  <input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" required />
+                  <input type="text" value={authUsername} onChange={(e) => setAuthUsername(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-400" required />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                      <label className="text-slate-700 font-bold block">Password</label>
-                     <button type="button" className="text-[10px] text-slate-400 hover:text-[#D4AF37] font-semibold transition-colors">Lupa Password?</button>
+                     <button type="button" onClick={() => { setShowForgotModal(true); resetForgotModal(); }} className="text-[10px] text-[#D4AF37] hover:text-[#bda032] font-bold transition-colors underline underline-offset-2">Lupa Password?</button>
                   </div>
                   <div className="relative">
-                    <input type={showPassword ? "text" : "password"} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 pr-12 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" required />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4AF37] focus:outline-none transition-colors">
+                    <input type={showPassword ? "text" : "password"} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 pr-12 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-400" required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="btn-press absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4AF37] focus:outline-none">
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-[#051622] hover:bg-slate-800 text-white font-black rounded-xl py-3.5 mt-2 flex items-center justify-center gap-2 uppercase tracking-wider transition-all shadow-lg hover:shadow-xl">
+                <button type="submit" className="btn-press w-full bg-[#051622] hover:bg-slate-800 text-white font-black rounded-xl py-3.5 mt-2 flex items-center justify-center gap-2 uppercase tracking-wider shadow-lg hover:shadow-xl">
                   <Lock size={16} /> Login Aman
                 </button>
                 <p className="text-center text-slate-500 mt-4 text-xs">Belum punya akun? <button type="button" onClick={() => setIsRegisterMode(true)} className="text-[#dca437] font-bold underline ml-1 hover:text-[#bda032]">Registrasi</button></p>
@@ -718,24 +1079,24 @@ const handleTambahTransaksi = async (e) => {
                 <button onClick={() => scrollToSection('beranda')} className="text-sm font-semibold text-slate-300 hover:text-[#D4AF37] transition-colors">Beranda</button>
                 <button onClick={() => scrollToSection('filosofi')} className="text-sm font-semibold text-slate-300 hover:text-[#D4AF37] transition-colors">Filosofi Logo</button>
                 <button onClick={() => scrollToSection('layanan')} className="text-sm font-semibold text-slate-300 hover:text-[#D4AF37] transition-colors">Layanan & Kontak</button>
-                <button onClick={toggleTheme} className="border border-slate-600/40 text-slate-200 hover:text-white hover:border-[#D4AF37] px-4 py-2.5 rounded-full text-sm flex items-center gap-2 transition-all bg-slate-800/40">
+                <button onClick={toggleTheme} className="btn-press border border-slate-600/40 text-slate-200 hover:text-white hover:border-[#D4AF37] px-4 py-2.5 rounded-full text-sm flex items-center gap-2 bg-slate-800/40">
                   {isDarkMode ? <Sun size={14} /> : <Moon size={14} />} {isDarkMode ? 'Light Mode' : 'Dark Mode'}
                 </button>
-                <button onClick={() => setShowAuthForm(true)} className="bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-bold px-6 py-2.5 rounded-full text-sm flex items-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-[#D4AF37]/20">
+                <button onClick={() => setShowAuthForm(true)} className="btn-press bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-bold px-6 py-2.5 rounded-full text-sm flex items-center gap-2 hover:scale-105 shadow-lg shadow-[#D4AF37]/20">
                   <Lock size={14} /> Login Sistem
                 </button>
               </div>
-              <div className="md:hidden flex items-center"><button onClick={() => setIsLandingMobileMenuOpen(!isLandingMobileMenuOpen)} className="text-slate-300 p-2 focus:outline-none">{isLandingMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}</button></div>
+              <div className="md:hidden flex items-center"><button onClick={() => setIsLandingMobileMenuOpen(!isLandingMobileMenuOpen)} className="btn-press text-slate-300 p-2 focus:outline-none">{isLandingMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}</button></div>
             </div>
           </div>
           {isLandingMobileMenuOpen && (
             <div className="md:hidden bg-[#0f172a] border-b border-slate-800 animate-fadeIn theme-landing-menu">
               <div className="px-4 pt-2 pb-6 space-y-2">
-                <button onClick={() => scrollToSection('beranda')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Beranda</button>
-                <button onClick={() => scrollToSection('filosofi')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Filosofi Logo</button>
-                <button onClick={() => scrollToSection('layanan')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl">Layanan & Kontak</button>
-                <button onClick={toggleTheme} className="w-full mt-4 border border-slate-600/40 text-slate-200 bg-slate-800/40 font-bold px-4 py-3 rounded-xl text-base flex justify-center items-center gap-2">{isDarkMode ? <Sun size={16} /> : <Moon size={16} />} {isDarkMode ? 'Light Mode' : 'Dark Mode'}</button>
-                <button onClick={() => setShowAuthForm(true)} className="w-full mt-4 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-bold px-4 py-3 rounded-xl text-base flex justify-center items-center gap-2"><Lock size={16} /> Login Sistem</button>
+                <button onClick={() => scrollToSection('beranda')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl transition-colors">Beranda</button>
+                <button onClick={() => scrollToSection('filosofi')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl transition-colors">Filosofi Logo</button>
+                <button onClick={() => scrollToSection('layanan')} className="block w-full text-left px-3 py-3 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-[#D4AF37] rounded-xl transition-colors">Layanan & Kontak</button>
+                <button onClick={toggleTheme} className="btn-press w-full mt-4 border border-slate-600/40 text-slate-200 bg-slate-800/40 font-bold px-4 py-3 rounded-xl text-base flex justify-center items-center gap-2">{isDarkMode ? <Sun size={16} /> : <Moon size={16} />} {isDarkMode ? 'Light Mode' : 'Dark Mode'}</button>
+                <button onClick={() => setShowAuthForm(true)} className="btn-press w-full mt-4 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-bold px-4 py-3 rounded-xl text-base flex justify-center items-center gap-2"><Lock size={16} /> Login Sistem</button>
               </div>
             </div>
           )}
@@ -745,7 +1106,7 @@ const handleTambahTransaksi = async (e) => {
         <section id="beranda" className="pt-32 pb-20 px-6 min-h-screen flex items-center relative theme-landing-hero">
           <div className="absolute top-[10%] left-[50%] -translate-x-1/2 w-[80%] max-w-2xl h-[500px] bg-[#D4AF37]/5 rounded-full blur-[120px] pointer-events-none theme-hero-glow"></div>
           <div className="max-w-4xl mx-auto text-center relative z-10">
-            <img src="/SIPKA-logo.png" alt="SIPKA Hero" className="h-28 sm:h-40 mx-auto mb-8 drop-shadow-[0_0_25px_rgba(212,175,55,0.2)] animate-pulse" />
+            <img src="/SIPKA-logo.png" alt="SIPKA Hero" className="h-28 sm:h-40 mx-auto mb-8 drop-shadow-[0_0_25px_rgba(212,175,55,0.2)]" style={{ animation: 'softPulse 3.5s ease-in-out infinite' }} />
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight mb-6">
               Sistem Informasi Pemantauan <br className="hidden sm:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] to-[#f3d05e]">Kepegawaian & Keuangan</span>
@@ -754,8 +1115,8 @@ const handleTambahTransaksi = async (e) => {
               Instrumen transformasi digital pendayagunaan aparatur sipil negara dan pengelolaan anggaran DIPA secara transparan, adaptif, dan presisi di lingkungan Kanwil DJKN Sumatera Utara.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button onClick={() => setShowAuthForm(true)} className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#c4a132] text-[#051622] font-black px-8 py-4 rounded-full text-sm flex justify-center items-center gap-2 transition-transform hover:-translate-y-1 shadow-lg shadow-[#D4AF37]/20">Masuk ke Dashboard <ArrowUpRight size={18} /></button>
-              <button onClick={() => scrollToSection('filosofi')} className="w-full sm:w-auto bg-slate-800/50 hover:bg-slate-800 text-white border border-slate-700 font-bold px-8 py-4 rounded-full text-sm flex justify-center items-center transition-colors">Pelajari Fitur & Makna</button>
+              <button onClick={() => setShowAuthForm(true)} className="btn-press w-full sm:w-auto bg-[#D4AF37] hover:bg-[#c4a132] text-[#051622] font-black px-8 py-4 rounded-full text-sm flex justify-center items-center gap-2 hover:-translate-y-1 shadow-lg shadow-[#D4AF37]/20">Masuk ke Dashboard <ArrowUpRight size={18} /></button>
+              <button onClick={() => scrollToSection('filosofi')} className="btn-press w-full sm:w-auto bg-slate-800/50 hover:bg-slate-800 text-white border border-slate-700 font-bold px-8 py-4 rounded-full text-sm flex justify-center items-center">Pelajari Fitur & Makna</button>
             </div>
           </div>
         </section>
@@ -816,39 +1177,194 @@ const handleTambahTransaksi = async (e) => {
 
         {/* Layanan & Kontak Footer */}
         <footer id="layanan" className="bg-[#0b1724] pt-20 pb-10 px-6 mt-10 theme-footer">
-          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <img src="/SIPKA-logo.png" className="h-12 w-auto drop-shadow-md" alt="SIPKA" />
-                <h2 className="text-3xl font-black text-white tracking-tight">SIPKA</h2>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed pr-4 mt-4">Sistem Informasi Pemantauan Kepegawaian & Keuangan Kanwil DJKN Sumatera Utara. Solusi cerdas untuk tata kelola pemerintahan yang transparan.</p>
-            </div>
-            <div className="space-y-5">
-              <h3 className="text-sm font-black text-[#D4AF37] tracking-widest uppercase drop-shadow-sm">Pusat Layanan & Kontak</h3>
-              <div className="space-y-4 text-sm text-slate-300">
-                <div className="flex items-start gap-3 group">
-                  <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0"><MapPin size={16} className="text-[#D4AF37]" /></div>
-                  <span className="leading-relaxed">Gedung Keuangan Negara (GKN) Medan<br/>Jl. Pangeran Diponegoro No.30-A<br/>Medan, Sumatera Utara</span>
+
+          {/* ── JUDUL SECTION ── */}
+          <div className="max-w-6xl mx-auto mb-12 text-center">
+            <p className="text-[11px] font-bold tracking-[0.3em] text-[#D4AF37] uppercase mb-2">Pusat Layanan</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">Kontak & Lokasi Kami</h2>
+            <p className="text-slate-400 text-sm mt-3 max-w-xl mx-auto leading-relaxed">Kami siap membantu Anda. Kunjungi langsung kantor kami atau hubungi melalui saluran resmi di bawah ini.</p>
+          </div>
+
+          {/* ── GRID UTAMA ── */}
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+            {/* KOLOM KIRI: PETA + KONTROL */}
+            <div className="lg:col-span-3 space-y-4">
+
+              {/* ── STATUS BUKA/TUTUP REAL-TIME ── */}
+              {(() => {
+                const now    = new Date();
+                const wibH   = parseInt(new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).toLocaleTimeString('en-US', { hour: '2-digit', hour12: false }));
+                const wibMin = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getMinutes();
+                const wibDay = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })).getDay(); // 0=Minggu,6=Sabtu
+                const wibTotal = wibH * 60 + wibMin;
+                const isWeekend = wibDay === 0 || wibDay === 6;
+                const isFriday  = wibDay === 5;
+                const closeTime = isFriday ? 17 * 60 + 30 : 17 * 60;
+                const isOpen    = !isWeekend && wibTotal >= 7 * 60 + 30 && wibTotal < closeTime;
+                const nextOpen  = isWeekend ? 'Senin 07.30 WIB' : wibTotal < 7 * 60 + 30 ? 'Hari ini 07.30 WIB' : 'Besok 07.30 WIB';
+                return (
+                  <div className={`flex items-center justify-between px-4 py-3 rounded-2xl border ${isOpen ? 'bg-emerald-950/60 border-emerald-800/60' : 'bg-slate-800/60 border-slate-700/60'}`}>
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-emerald-400 pulse-dot' : 'bg-slate-500'}`} />
+                      <span className={`font-black text-sm ${isOpen ? 'text-emerald-400' : 'text-slate-400'}`}>
+                        {isOpen ? 'Kantor Sedang Buka' : 'Kantor Sedang Tutup'}
+                      </span>
+                    </div>
+                    <span className={`text-[11px] font-semibold ${isOpen ? 'text-emerald-300' : 'text-slate-500'}`}>
+                      {isOpen ? `Tutup pukul ${isFriday ? '17.30' : '17.00'} WIB` : `Buka ${nextOpen}`}
+                    </span>
+                  </div>
+                );
+              })()}
+
+              {/* ── PETA GOOGLE MAPS ── */}
+              <div className="rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl shadow-black/40 relative">
+                <div className="absolute top-3 left-3 z-10 flex items-center gap-2 bg-[#0b1724]/90 backdrop-blur-sm border border-[#D4AF37]/30 rounded-xl px-3 py-2 shadow-lg">
+                  <div className="w-2 h-2 rounded-full bg-[#D4AF37] pulse-dot" />
+                  <span className="text-[11px] font-bold text-[#D4AF37] tracking-wide">GKN Medan</span>
                 </div>
-                <div className="flex items-center gap-3 group">
+                <iframe
+                  title="Lokasi Gedung Keuangan Negara Medan"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3982.0143697937793!2d98.67131577597595!3d3.5912688963289975!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30313040b2b7a2eb%3A0x4498e0a55a2d8082!2sGedung%20Keuangan%20Negara%20Medan!5e0!3m2!1sid!2sid!4v1719000000000!5m2!1sid!2sid"
+                  width="100%"
+                  height="340"
+                  style={{ border: 0, display: 'block' }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+
+              {/* ── SELECTOR MODE TRANSPORTASI ── */}
+              <div className={`rounded-2xl border border-slate-700/60 bg-slate-800/40 p-4 space-y-3`}>
+                <p className="text-[11px] font-bold text-slate-400 tracking-widest uppercase">Rute ke GKN Medan — Pilih Mode Transportasi</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { mode: 'driving',   icon: '🚗', label: 'Mobil',       est: '~10–20 menit' },
+                    { mode: 'bicycling', icon: '🛵', label: 'Motor',       est: '~8–15 menit' },
+                    { mode: 'walking',   icon: '🚶', label: 'Jalan Kaki',  est: '~30–45 menit' },
+                  ].map(({ mode, icon, label, est }) => (
+                    <a
+                      key={mode}
+                      href={`https://www.google.com/maps/dir/?api=1&destination=Gedung+Keuangan+Negara+Medan&travelmode=${mode}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-press flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-slate-900/60 border border-slate-700 hover:border-[#D4AF37]/60 hover:bg-[#D4AF37]/10 transition-all group"
+                    >
+                      <span className="text-xl">{icon}</span>
+                      <span className="text-white font-bold text-xs">{label}</span>
+                      <span className="text-slate-500 text-[10px] group-hover:text-[#D4AF37] transition-colors">{est}</span>
+                    </a>
+                  ))}
+                </div>
+                {/* Info jarak dari pusat kota */}
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-700/60">
+                  <MapPin size={12} className="text-slate-500 shrink-0" />
+                  <p className="text-[11px] text-slate-500">Estimasi dari <span className="text-slate-400 font-semibold">Pusat Kota Medan (Lapangan Merdeka)</span> — sekitar <span className="text-white font-semibold">1.8 km</span></p>
+                </div>
+              </div>
+
+              {/* ── TOMBOL AKSI UTAMA ── */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Gedung+Keuangan+Negara+Medan"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-press flex-1 flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3.5 px-5 rounded-xl shadow-lg shadow-[#D4AF37]/20 text-sm"
+                >
+                  <MapPin size={16} /> Buka di Google Maps
+                </a>
+                <a
+                  href="https://www.google.com/maps/dir/?api=1&destination=Gedung+Keuangan+Negara+Medan&travelmode=driving"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-press flex-1 flex items-center justify-center gap-2.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 hover:border-[#D4AF37]/50 font-bold py-3.5 px-5 rounded-xl text-sm"
+                >
+                  <ArrowUpRight size={16} /> Mulai Navigasi
+                </a>
+              </div>
+            </div>
+
+            {/* KOLOM KANAN: INFO KONTAK */}
+            <div className="lg:col-span-2 space-y-7">
+
+              {/* Identitas Kantor */}
+              <div className="flex items-center gap-4">
+                <img src="/SIPKA-logo.png" className="h-12 w-auto drop-shadow-md shrink-0" alt="SIPKA" />
+                <div>
+                  <h3 className="font-black text-white text-lg leading-tight">Kanwil DJKN</h3>
+                  <p className="text-[#D4AF37] font-bold text-[11px] tracking-widest">SUMATERA UTARA</p>
+                </div>
+              </div>
+
+              {/* Kartu-kartu Kontak */}
+              <div className="space-y-3">
+                {/* Alamat */}
+                <a href="https://www.google.com/maps/search/?api=1&query=Gedung+Keuangan+Negara+Medan" target="_blank" rel="noreferrer"
+                  className="flex items-start gap-3.5 group p-3.5 rounded-xl border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all">
+                  <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0 mt-0.5"><MapPin size={16} className="text-[#D4AF37]" /></div>
+                  <div>
+                    <p className="text-white font-bold text-sm leading-snug">Gedung Keuangan Negara (GKN) Medan</p>
+                    <p className="text-slate-400 text-xs mt-1 leading-relaxed">Jl. Pangeran Diponegoro No.30-A<br/>Medan Baru, Kota Medan 20152</p>
+                    <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold text-[#D4AF37] group-hover:underline">Lihat di Maps <ArrowUpRight size={10} /></span>
+                  </div>
+                </a>
+
+                {/* Email */}
+                <a href="mailto:kanwil.sumut@kemenkeu.go.id"
+                  className="flex items-center gap-3.5 group p-3.5 rounded-xl border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all">
                   <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0"><Mail size={16} className="text-[#D4AF37]" /></div>
-                  <span>kanwil.sumut@kemenkeu.go.id</span>
+                  <div>
+                    <p className="text-white font-bold text-sm">kanwil.sumut@kemenkeu.go.id</p>
+                    <p className="text-slate-400 text-xs mt-0.5">Email resmi institusi</p>
+                  </div>
+                </a>
+
+                {/* Telepon */}
+                <a href="tel:+62614538558"
+                  className="flex items-center gap-3.5 group p-3.5 rounded-xl border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all">
+                  <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12.3a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.6h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.1a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm">(061) 453-8558</p>
+                    <p className="text-slate-400 text-xs mt-0.5">Telepon kantor</p>
+                  </div>
+                </a>
+
+                {/* Jam Operasional */}
+                <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-800/50 border border-slate-700/60">
+                  <div className="p-2.5 bg-slate-700 rounded-xl shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm mb-1.5">Jam Operasional</p>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between"><span className="text-slate-400">Senin – Kamis</span><span className="text-white font-semibold">07.30 – 17.00 WIB</span></div>
+                      <div className="flex justify-between"><span className="text-slate-400">Jumat</span><span className="text-white font-semibold">07.30 – 17.30 WIB</span></div>
+                      <div className="flex justify-between"><span className="text-slate-400">Sabtu & Minggu</span><span className="text-slate-500 font-semibold">Libur</span></div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="space-y-5">
-              <h3 className="text-sm font-black text-[#D4AF37] tracking-widest uppercase drop-shadow-sm">Kanal Media Sosial</h3>
-              <p className="text-sm text-slate-400">Ikuti perkembangan dan informasi terbaru melalui media sosial resmi kami.</p>
-              <div className="flex gap-4">
-                <a href="https://www.instagram.com/djknkanwilsumut/?hl=en" target="_blank" rel="noreferrer" className="p-3.5 bg-slate-800 border border-slate-700 rounded-full hover:border-pink-500 hover:-translate-y-1 transition-all duration-300 group shadow-md"><SiInstagram size={20} className="text-slate-400 group-hover:text-pink-500 transition-colors" /></a>
-                <a href="https://www.facebook.com/kanwildjknsumut/?locale=id_ID" target="_blank" rel="noreferrer" className="p-3.5 bg-slate-800 border border-slate-700 rounded-full hover:border-blue-500 hover:-translate-y-1 transition-all duration-300 group shadow-md"><SiFacebook size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" /></a>
-                <a href="https://www.youtube.com/@KanwilDJKNSumut" target="_blank" rel="noreferrer" className="p-3.5 bg-slate-800 border border-slate-700 rounded-full hover:border-red-500 hover:-translate-y-1 transition-all duration-300 group shadow-md"><SiYoutube size={20} className="text-slate-400 group-hover:text-red-500 transition-colors" /></a>
+
+              {/* Media Sosial */}
+              <div>
+                <p className="text-[11px] font-bold tracking-widest text-[#D4AF37] uppercase mb-3">Media Sosial Resmi</p>
+                <div className="flex gap-3">
+                  <a href="https://www.instagram.com/djknkanwilsumut/?hl=en" target="_blank" rel="noreferrer" title="Instagram" className="btn-press p-3 bg-slate-800 border border-slate-700 rounded-xl hover:border-pink-500 hover:bg-pink-500/10 transition-all group shadow-md"><SiInstagram size={18} className="text-slate-400 group-hover:text-pink-500 transition-colors" /></a>
+                  <a href="https://www.facebook.com/kanwildjknsumut/?locale=id_ID" target="_blank" rel="noreferrer" title="Facebook" className="btn-press p-3 bg-slate-800 border border-slate-700 rounded-xl hover:border-blue-500 hover:bg-blue-500/10 transition-all group shadow-md"><SiFacebook size={18} className="text-slate-400 group-hover:text-blue-500 transition-colors" /></a>
+                  <a href="https://www.youtube.com/@KanwilDJKNSumut" target="_blank" rel="noreferrer" title="YouTube" className="btn-press p-3 bg-slate-800 border border-slate-700 rounded-xl hover:border-red-500 hover:bg-red-500/10 transition-all group shadow-md"><SiYoutube size={18} className="text-slate-400 group-hover:text-red-500 transition-colors" /></a>
+                </div>
               </div>
             </div>
           </div>
-          <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-slate-800/80 text-center">
-            <p className="text-xs text-slate-500 font-medium tracking-wide">&copy; {new Date().getFullYear()} Kanwil DJKN Sumatera Utara. Hak Cipta Dilindungi Undang-Undang.</p>
+
+          {/* ── FOOTER BAWAH ── */}
+          <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-slate-500 font-medium">&copy; {new Date().getFullYear()} Kanwil DJKN Sumatera Utara. Hak Cipta Dilindungi Undang-Undang.</p>
+            <p className="text-[11px] text-slate-600 font-medium">Dibangun dengan SIPKA v2.0</p>
           </div>
         </footer>
       </div>
@@ -868,13 +1384,15 @@ const handleTambahTransaksi = async (e) => {
           <div><h1 className="font-extrabold text-sm text-[#D4AF37] leading-none">SIPKA SUMUT</h1><p className="text-[9px] text-slate-600 mt-0.5">Sistem Pemantauan Terpadu</p></div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={toggleTheme} className="p-2 text-slate-600 hover:text-[#D4AF37] bg-slate-100 rounded-xl border border-slate-200 transition">{isDarkMode ? <Sun size={18} /> : <Moon size={18} />}</button>
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 hover:text-white bg-slate-100 rounded-xl border border-slate-200 transition">{isMobileMenuOpen ? <X size={18} className="text-[#D4AF37]" /> : <Menu size={18} />}</button>
+          <button onClick={toggleTheme} aria-label="Ganti tema" className="btn-press p-2 text-slate-600 hover:text-[#D4AF37] bg-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+            <span className="inline-block transition-transform duration-500" style={{ transform: isDarkMode ? 'rotate(0deg)' : 'rotate(180deg)' }}>{isDarkMode ? <Sun size={18} /> : <Moon size={18} />}</span>
+          </button>
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Buka menu" className="btn-press p-2 text-slate-600 hover:text-white bg-slate-100 rounded-xl border border-slate-200">{isMobileMenuOpen ? <X size={18} className="text-[#D4AF37]" /> : <Menu size={18} />}</button>
         </div>
       </header>
 
       {/* OVERLAY NAVIGATION MOBILE */}
-      {isMobileMenuOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-45 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
+      {isMobileMenuOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-45 md:hidden animate-fadeIn" onClick={() => setIsMobileMenuOpen(false)} />}
 
       {/* 2. SIDEBAR NAVIGATION */}
       <aside className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-white text-white flex flex-col justify-between shadow-[10px_0_30px_rgba(15,23,42,0.08)] border-r border-slate-200 transform transition-transform duration-300 ease-in-out md:sticky md:h-screen md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -884,18 +1402,21 @@ const handleTambahTransaksi = async (e) => {
               <img src="/SIPKA-logo.png" alt="Logo SIPKA" className="h-10 w-auto object-contain shrink-0" />
               <div><h1 className="font-black text-lg leading-tight text-slate-900">SIPKA</h1><p className="text-[9px] text-[#D4AF37] font-bold mt-0.5 tracking-wider">KANWIL SUMUT</p></div>
             </div>
-            <button onClick={toggleTheme} className="p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 hover:text-[#D4AF37] transition">{isDarkMode ? <Sun size={16} /> : <Moon size={16} />}</button>
+            <button onClick={toggleTheme} aria-label="Ganti tema" className="btn-press p-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 hover:text-[#D4AF37] overflow-hidden">
+              <span className="inline-block transition-transform duration-500" style={{ transform: isDarkMode ? 'rotate(0deg)' : 'rotate(180deg)' }}>{isDarkMode ? <Sun size={16} /> : <Moon size={16} />}</span>
+            </button>
           </div>
           <nav className="p-4 space-y-2">
-            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${currentView === 'dashboard' ? 'bg-gradient-to-r from-[#D4AF37] to-[#bda032] text-[#051622] shadow-lg shadow-[#D4AF37]/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}><LayoutDashboard size={18} /> Dashboard Keuangan</button>
-            <button onClick={() => navigateTo('statistik')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${currentView === 'statistik' ? 'bg-gradient-to-r from-[#D4AF37] to-[#bda032] text-[#051622] shadow-lg shadow-[#D4AF37]/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}><Users size={18} /> Statistik Pegawai</button>
-            <button onClick={() => navigateTo('profile')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${currentView === 'profile' ? 'bg-gradient-to-r from-[#D4AF37] to-[#bda032] text-[#051622] shadow-lg shadow-[#D4AF37]/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}><Settings size={18} /> Pengaturan Profil</button>
+            <button onClick={() => navigateTo('dashboard')} className={`btn-press relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${currentView === 'dashboard' ? 'bg-gradient-to-r from-[#D4AF37] to-[#bda032] text-[#051622] shadow-lg shadow-[#D4AF37]/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:translate-x-0.5'}`}><LayoutDashboard size={18} /> Dashboard Keuangan</button>
+            <button onClick={() => navigateTo('statistik')} className={`btn-press relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${currentView === 'statistik' ? 'bg-gradient-to-r from-[#D4AF37] to-[#bda032] text-[#051622] shadow-lg shadow-[#D4AF37]/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:translate-x-0.5'}`}><Users size={18} /> Statistik Pegawai</button>
+            <button onClick={() => navigateTo('profile')} className={`btn-press relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${currentView === 'profile' ? 'bg-gradient-to-r from-[#D4AF37] to-[#bda032] text-[#051622] shadow-lg shadow-[#D4AF37]/20' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 hover:translate-x-0.5'}`}><Settings size={18} /> Pengaturan Profil</button>
           </nav>
         </div>
         <div className="p-4 border-t border-slate-200 bg-white theme-surface">
-          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl py-2.5 text-xs font-bold uppercase tracking-widest transition-colors"><LogOut size={14} /> Keluar</button>
+          <button onClick={handleLogout} className="btn-press w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl py-2.5 text-xs font-bold uppercase tracking-widest"><LogOut size={14} /> Keluar</button>
         </div>
       </aside>
+
 
       {/* 3. AREA KONTEN UTAMA DASHBOARD */}
       <main className="flex-1 overflow-y-auto bg-slate-100 theme-dashboard-main">
@@ -922,26 +1443,32 @@ const handleTambahTransaksi = async (e) => {
               
               {/* KARTU KEUANGAN UTAMA */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
-                  <div className={`text-xs font-medium ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Total Pagu / Realisasi</div>
-                  <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">Rp {totalRealisasi} M</div>
-                  <div className="text-[10px] text-emerald-400 mt-2 flex items-center gap-1 font-semibold"><TrendingUp size={12}/> Berdasarkan log mutasi</div>
+                <div className="card-hover relative overflow-hidden bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light animate-riseIn" style={{ animationDelay: '0ms' }}>
+                  <div className="absolute -right-4 -top-4 text-[#D4AF37]/10"><TrendingUp size={90} /></div>
+                  <div className={`text-xs font-medium relative z-10 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Total Pagu / Realisasi</div>
+                  <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm relative z-10">Rp {totalRealisasi} M</div>
+                  <div className="text-[10px] text-emerald-400 mt-2 flex items-center gap-1 font-semibold relative z-10"><TrendingUp size={12}/> Berdasarkan log mutasi</div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
-                  <div className={`text-xs font-medium ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Jumlah Transaksi</div>
-                  <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">{transaksi.length} Berkas</div>
-                  <div className={`text-[10px] mt-2 font-medium ${isDarkMode ? "text-white" : "text-slate-600"}`}>Tercatat di sistem lokal</div>
+                <div className="card-hover relative overflow-hidden bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light animate-riseIn" style={{ animationDelay: '80ms' }}>
+                  <div className="absolute -right-4 -top-4 text-[#D4AF37]/10"><LayoutDashboard size={90} /></div>
+                  <div className={`text-xs font-medium relative z-10 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Jumlah Transaksi</div>
+                  <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm relative z-10">{transaksi.length} Berkas</div>
+                  <div className={`text-[10px] mt-2 font-medium relative z-10 ${isDarkMode ? "text-white" : "text-slate-600"}`}>Tercatat di sistem lokal</div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl transition-transform hover:-translate-y-1 theme-panel-light">
-                  <div className={`text-xs font-medium ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Status Anggaran</div>
-                  <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm">Optimal</div>
-                  <div className={`text-[10px] mt-2 font-medium ${isDarkMode ? "text-white" : "text-slate-600"}`}>Sesuai dengan pagu DIPA</div>
+                <div className="card-hover relative overflow-hidden bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light animate-riseIn" style={{ animationDelay: '160ms' }}>
+                  <div className="absolute -right-4 -top-4 text-[#D4AF37]/10"><ShieldCheck size={90} /></div>
+                  <div className={`text-xs font-medium relative z-10 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>Status Anggaran</div>
+                  <div className="text-2xl font-black text-[#D4AF37] mt-1 drop-shadow-sm relative z-10 flex items-center gap-2">
+                    Optimal <span className="w-2 h-2 rounded-full bg-emerald-400 pulse-dot" />
+                  </div>
+                  <div className={`text-[10px] mt-2 font-medium relative z-10 ${isDarkMode ? "text-white" : "text-slate-600"}`}>Sesuai dengan pagu DIPA</div>
                 </div>
               </div>
 
+
               {/* GRAFIK KEUANGAN */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="card-hover bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light animate-riseIn" style={{ animationDelay: '120ms' }}>
                   <h3 className={`text-xs font-black mb-5 tracking-widest uppercase ${isDarkMode ? "text-white" : "text-slate-900"}`}>Tren Realisasi Anggaran (Jutaan Rp)</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -950,13 +1477,13 @@ const handleTambahTransaksi = async (e) => {
                         <XAxis dataKey="bulan" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                         <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                         <Tooltip contentStyle={chartTooltipStyle} itemStyle={chartTooltipItemStyle} />
-                        <Area type="monotone" dataKey="Realisasi" stroke="#D4AF37" strokeWidth={3} fillOpacity={0.15} fill="#D4AF37" />
+                        <Area type="monotone" dataKey="Realisasi" stroke="#D4AF37" strokeWidth={3} fillOpacity={0.15} fill="#D4AF37" animationDuration={800} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="card-hover bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light animate-riseIn" style={{ animationDelay: '200ms' }}>
                   <h3 className={`text-xs font-black mb-5 tracking-widest uppercase ${isDarkMode ? "text-white" : "text-slate-900"}`}>Alokasi Per Bidang (Miliar Rp)</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -965,7 +1492,7 @@ const handleTambahTransaksi = async (e) => {
                         <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                         <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                         <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: chartCursorFill }} />
-                        <Bar dataKey="Rp" radius={[4, 4, 0, 0]}>
+                        <Bar dataKey="Rp" radius={[4, 4, 0, 0]} animationDuration={800}>
                           {processedDataBidang.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={index === 0 ? '#D4AF37' : '#3b82f6'} />
                           ))}
@@ -987,41 +1514,43 @@ const handleTambahTransaksi = async (e) => {
                     <form onSubmit={handleTambahTransaksi} className="space-y-4 text-xs">
                       <div>
                         <label className={`block mb-1.5 font-medium ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>Uraian Transaksi</label>
-                        <input type="text" value={uraianInput} onChange={(e) => setUraianInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" placeholder="Contoh: Pembelian ATK Kantor" required />
+                        <input type="text" value={uraianInput} onChange={(e) => setUraianInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-300" placeholder="Contoh: Pembelian ATK Kantor" required />
                       </div>
                       <div>
                         <label className={`block mb-1.5 font-medium ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>Nominal Anggaran (Rp)</label>
-                        <input type="number" value={nominalInput} onChange={(e) => setNominalInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" placeholder="Contoh: 5000000" required />
+                        <input type="number" min="0" value={nominalInput} onChange={(e) => setNominalInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-300" placeholder="Contoh: 5000000" required />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className={`block mb-1.5 font-medium ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>Bidang / Unit</label>
-                          <select value={bidangInput} onChange={(e) => setBidangInput(e.target.value)} className="w-full bg-white border border-slate-700 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition">
+                          <select value={bidangInput} onChange={(e) => setBidangInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-300 cursor-pointer">
                             <option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option>
                           </select>
                         </div>
                         <div>
                           <label className={`block mb-1.5 font-medium ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>Jenis Arus</label>
-                          <select value={tipeInput} onChange={(e) => setTipeInput(e.target.value)} className="w-full bg-white border border-slate-700 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition">
+                          <select value={tipeInput} onChange={(e) => setTipeInput(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-300 cursor-pointer">
                             <option value="keluar">Pengeluaran</option><option value="masuk">Pemasukan</option>
                           </select>
                         </div>
                       </div>
 
                       <div className="flex gap-3 pt-2">
-                        <button type="submit" className="flex-1 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 rounded-xl transition-transform hover:scale-[1.02] shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center gap-2">
-                          <PlusCircle size={14}/> Simpan
+                        <button type="submit" disabled={isSavingTransaksi} className="btn-press flex-1 bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 rounded-xl shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                          {isSavingTransaksi ? <Settings size={14} className="spinner-icon" /> : <PlusCircle size={14}/>}
+                          {isSavingTransaksi ? 'Menyimpan...' : 'Simpan'}
                         </button>
-                        <label className="flex-1 text-center bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl cursor-pointer transition-colors border border-slate-600 flex items-center justify-center gap-2">
-                          <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} className="hidden" />
-                          Import Excel
+                        <label className={`btn-press flex-1 text-center bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl border border-slate-600 flex items-center justify-center gap-2 ${isImportingTransaksi ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`}>
+                          <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} className="hidden" disabled={isImportingTransaksi} />
+                          {isImportingTransaksi ? <Settings size={14} className="spinner-icon" /> : null}
+                          {isImportingTransaksi ? 'Memproses...' : 'Import Excel'}
                         </label>
                       </div>
                     </form>
                   </div>
                 )}
 
-                <div className={`bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light ${sessionUser?.role === 'admin' ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
+                <div className={`bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light animate-riseIn ${sessionUser?.role === 'admin' ? 'xl:col-span-2' : 'xl:col-span-3'}`} style={{ animationDelay: '120ms' }}>
                   <div className="flex flex-col gap-3 mb-5">
                     <h3 className="text-xs font-black text-white tracking-widest uppercase">Log Mutasi Anggaran Terkini</h3>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1031,14 +1560,24 @@ const handleTambahTransaksi = async (e) => {
                           <span className={`text-[11px] font-medium px-3 py-2 rounded-xl border ${isDarkMode ? "text-slate-300 bg-slate-900/30 border-slate-700/50" : "text-slate-700 bg-white border-slate-200 shadow-sm"}`}>
                             {selectedTransaksi.length} dipilih
                           </span>
-                          <button type="button" onClick={handleSelectAllTransaksi} className={`inline-flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-xl border transition-colors ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}>
+                          <button type="button" onClick={handleSelectAllTransaksi} className={`btn-press inline-flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-xl border ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}>
                             <input type="checkbox" ref={selectAllTransaksiRef} checked={isAllTransaksiSelected} readOnly className="h-4 w-4 accent-[#D4AF37]" /> Select All
                           </button>
-                          <button type="button" onClick={() => handleHapusTransaksi()} disabled={selectedTransaksi.length === 0} className={`inline-flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-xl border transition-colors disabled:cursor-not-allowed ${isDarkMode ? "bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-400 text-white border-rose-400/40" : "bg-rose-50 hover:bg-rose-100 disabled:bg-slate-100 disabled:text-slate-400 text-rose-600 border-rose-200 shadow-sm"}`}>
+                          <button type="button" onClick={() => handleHapusTransaksi()} disabled={selectedTransaksi.length === 0} className={`btn-press inline-flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-xl border disabled:cursor-not-allowed ${isDarkMode ? "bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-400 text-white border-rose-400/40" : "bg-rose-50 hover:bg-rose-100 disabled:bg-slate-100 disabled:text-slate-400 text-rose-600 border-rose-200 shadow-sm"}`}>
                             <Trash2 size={14} /> Hapus Terpilih
                           </button>
                         </div>
                       )}
+                    </div>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search size={14} className="text-slate-400" /></div>
+                      <input
+                        type="text"
+                        placeholder="Cari uraian atau bidang transaksi..."
+                        value={searchTransaksi}
+                        onChange={(e) => setSearchTransaksi(e.target.value)}
+                        className={`w-full sm:w-72 pl-9 pr-3 py-2.5 rounded-xl text-xs focus:outline-none transition-all border ${isDarkMode ? 'bg-slate-900/40 border-slate-700 text-slate-200 focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30' : 'bg-white border-slate-200 text-slate-900 focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30'}`}
+                      />
                     </div>
                   </div>
 
@@ -1055,10 +1594,11 @@ const handleTambahTransaksi = async (e) => {
                         </tr>
                       </thead>
                       <tbody className={`divide-y ${isDarkMode ? "divide-slate-700/50" : "divide-slate-200/80"}`}>
-                        {transaksi.map((t) => {
+                        {filteredTransaksi.map((t) => {
                           const isSelected = selectedTransaksi.includes(t.id);
+                          const isBaruDitambah = t.id === lastAddedTransaksiId;
                           return (
-                            <tr key={t.id} className={`transition-colors ${isDarkMode ? 'hover:bg-slate-800/40 text-slate-200' : 'hover:bg-slate-50 text-slate-700'} ${isSelected ? (isDarkMode ? 'bg-slate-800/60' : 'bg-blue-50') : ''}`}>
+                            <tr key={t.id} className={`transition-colors ${isDarkMode ? 'hover:bg-slate-800/40 text-slate-200' : 'hover:bg-slate-50 text-slate-700'} ${isSelected ? (isDarkMode ? 'bg-slate-800/60' : 'bg-blue-50') : ''} ${isBaruDitambah ? 'row-highlight-new' : ''}`}>
                               {sessionUser?.role === 'admin' && (
                                 <td className="py-3.5 px-2 text-center align-middle">
                                   <input type="checkbox" checked={isSelected} onChange={() => handleToggleTransaksiSelect(t.id)} className="h-4 w-4 accent-[#D4AF37] cursor-pointer" />
@@ -1066,18 +1606,32 @@ const handleTambahTransaksi = async (e) => {
                               )}
                               <td className="py-3.5 px-2 whitespace-nowrap">{t.date}</td>
                               <td className="py-3.5 px-2 max-w-xs truncate pr-4">{t.uraian}</td>
-                              <td className="py-3.5 px-2"><span className="px-2.5 py-1 rounded-md bg-slate-800 border border-slate-600 text-[10px] font-semibold">{t.bidang}</span></td>
+                              <td className="py-3.5 px-2"><span className={`px-2.5 py-1 rounded-md border text-[10px] font-semibold ${isDarkMode ? 'bg-slate-800 border-slate-600 text-slate-200' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>{t.bidang}</span></td>
                               <td className={`py-3.5 px-2 text-right font-bold ${t.tipe === 'masuk' ? 'text-emerald-400' : 'text-rose-400'}`}>{t.tipe === 'masuk' ? '+' : '-'} {t.jumlah.toLocaleString('id-ID')}</td>
                               <td className="py-3.5 px-2 text-center">
                                 {sessionUser?.role === 'admin' && (
-                                  <button onClick={() => handleHapusTransaksi(t.id)} title="Hapus Data" className="text-rose-500 hover:text-white bg-rose-500/10 hover:bg-rose-500 border border-rose-500/50 p-1.5 rounded-md transition-colors inline-flex items-center justify-center"><Trash2 size={14} /></button>
+                                  <button onClick={() => handleHapusTransaksi(t.id)} title="Hapus Data" className="text-rose-500 hover:text-white bg-rose-500/10 hover:bg-rose-500 border border-rose-500/50 p-1.5 rounded-md transition-all hover:scale-110 inline-flex items-center justify-center"><Trash2 size={14} /></button>
                                 )}
                               </td>
                             </tr>
                           );
                         })}
+                        {filteredTransaksi.length === 0 && transaksi.length > 0 && (
+                          <tr><td colSpan={sessionUser?.role === 'admin' ? 6 : 5} className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-2 text-slate-500">
+                              <Search size={24} className="opacity-40" />
+                              <span className="font-medium text-sm">Tidak ada hasil untuk "{searchTransaksi}"</span>
+                            </div>
+                          </td></tr>
+                        )}
                         {transaksi.length === 0 && (
-                          <tr><td colSpan={sessionUser?.role === 'admin' ? 6 : 5} className="py-8 text-center text-slate-500 font-medium">Belum ada log mutasi.</td></tr>
+                          <tr><td colSpan={sessionUser?.role === 'admin' ? 6 : 5} className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-2 text-slate-500">
+                              <Info size={24} className="opacity-40" />
+                              <span className="font-medium text-sm">Belum ada log mutasi.</span>
+                              <span className="text-[11px] opacity-75">Tambahkan transaksi baru atau import data Excel untuk memulai.</span>
+                            </div>
+                          </td></tr>
                         )}
                       </tbody>
                     </table>
@@ -1101,17 +1655,18 @@ const handleTambahTransaksi = async (e) => {
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <label className="inline-flex items-center justify-center gap-2 text-center bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 px-5 rounded-xl cursor-pointer transition-transform hover:scale-[1.01] shadow-lg shadow-[#D4AF37]/20 text-xs uppercase tracking-wider">
-                      <input type="file" accept=".csv, .xlsx, .xls" onChange={handleImportStatistikExcel} className="hidden" />
-                      Import Excel / CSV
+                    <label className={`btn-press inline-flex items-center justify-center gap-2 text-center bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 px-5 rounded-xl shadow-lg shadow-[#D4AF37]/20 text-xs uppercase tracking-wider ${isImportingStatistik ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`}>
+                      <input type="file" accept=".csv, .xlsx, .xls" onChange={handleImportStatistikExcel} className="hidden" disabled={isImportingStatistik} />
+                      {isImportingStatistik ? <Settings size={14} className="spinner-icon" /> : null}
+                      {isImportingStatistik ? 'Memproses...' : 'Import Excel / CSV'}
                     </label>
                     {statistikExcelFileName && (
-                      <button type="button" onClick={handleResetStatistikImport} className={`inline-flex items-center justify-center gap-2 text-center font-bold py-3 px-5 rounded-xl transition-colors border text-xs uppercase tracking-wider ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}>Reset Data</button>
+                      <button type="button" onClick={handleResetStatistikImport} className={`btn-press inline-flex items-center justify-center gap-2 text-center font-bold py-3 px-5 rounded-xl transition-colors border text-xs uppercase tracking-wider ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}>Reset Data</button>
                     )}
                   </div>
                 </div>
                 {statistikExcelFileName && (
-                  <p className={`text-[11px] mt-4 ${isDarkMode ? "text-emerald-300" : "text-slate-600"}`}>
+                  <p className={`text-[11px] mt-4 animate-fadeIn ${isDarkMode ? "text-emerald-300" : "text-slate-600"}`}>
                     File aktif: <span className={isDarkMode ? "font-semibold text-white" : "font-semibold text-slate-900"}>{statistikExcelFileName}</span> · Visualisasi 100% menggunakan data yang diimpor.
                   </p>
                 )}
@@ -1119,23 +1674,35 @@ const handleTambahTransaksi = async (e) => {
 
               {/* 4 KARTU RINGKASAN SDM DENGAN DRILL-DOWN MODAL (DIPINDAH KE SINI) */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div onClick={() => setShowPegawaiModal(true)} className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer group theme-panel-light flex items-center gap-4">
+                <div
+                  onClick={() => setShowPegawaiModal(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowPegawaiModal(true); } }}
+                  role="button" tabIndex={0} aria-haspopup="dialog"
+                  className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md cursor-pointer group theme-panel-light flex items-center gap-4"
+                  style={{ animationDelay: '0ms' }}
+                >
                   <div className="bg-[#D4AF37]/20 p-3.5 rounded-xl text-[#D4AF37] group-hover:scale-110 transition-transform"><Users size={24} /></div>
-                  <div>
+                  <div className="flex-1">
                     <div className="text-2xl font-black text-[#D4AF37]">{daftarPegawai.length}</div>
                     <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Total Pegawai</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">(Klik untuk detail)</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5 flex items-center gap-0.5">Klik untuk detail <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /></div>
                   </div>
                 </div>
-                <div onClick={() => setShowUnitModal(true)} className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer group theme-panel-light flex items-center gap-4">
+                <div
+                  onClick={() => setShowUnitModal(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowUnitModal(true); } }}
+                  role="button" tabIndex={0} aria-haspopup="dialog"
+                  className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md cursor-pointer group theme-panel-light flex items-center gap-4"
+                  style={{ animationDelay: '80ms' }}
+                >
                   <div className="bg-blue-500/20 p-3.5 rounded-xl text-blue-400 group-hover:scale-110 transition-transform"><LayoutGrid size={24} /></div>
-                  <div>
+                  <div className="flex-1">
                     <div className="text-2xl font-black text-blue-400">{dataStatistikUnitTampil.length}</div>
                     <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Bidang / Unit</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">(Klik untuk detail)</div>
+                    <div className="text-[9px] text-slate-400 mt-0.5 flex items-center gap-0.5">Klik untuk detail <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /></div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4 hover:shadow-xl transition-all">
+                <div className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4" style={{ animationDelay: '160ms' }}>
                   <div className="bg-indigo-500/20 p-3.5 rounded-xl text-indigo-400"><User size={24} /></div>
                   <div>
                     <div className="text-2xl font-black text-indigo-400">{dataStatistikGenderTampil.find(g => g.name === 'Laki-Laki')?.value || 0}</div>
@@ -1143,7 +1710,7 @@ const handleTambahTransaksi = async (e) => {
                     <div className="text-[9px] text-slate-400 mt-0.5">Pegawai</div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4 hover:shadow-xl transition-all">
+                <div className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4" style={{ animationDelay: '240ms' }}>
                   <div className="bg-rose-500/20 p-3.5 rounded-xl text-rose-400"><User size={24} /></div>
                   <div>
                     <div className="text-2xl font-black text-rose-400">{dataStatistikGenderTampil.find(g => g.name === 'Perempuan')?.value || 0}</div>
@@ -1155,7 +1722,7 @@ const handleTambahTransaksi = async (e) => {
 
               {/* GRAFIK STATISTIK */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light" style={{ animationDelay: '0ms' }}>
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Sebaran Pegawai per Unit Kerja</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1164,12 +1731,12 @@ const handleTambahTransaksi = async (e) => {
                         <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                         <YAxis dataKey="unit" type="category" stroke="#94a3b8" fontSize={11} width={100} tickLine={false} axisLine={false} />
                         <Tooltip cursor={{ fill: chartCursorFill }} contentStyle={chartTooltipStyle} />
-                        <Bar dataKey="jumlah" fill="#D4AF37" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="jumlah" fill="#D4AF37" radius={[0, 4, 4, 0]} animationDuration={800} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light" style={{ animationDelay: '80ms' }}>
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Profil Berdasarkan Generasi</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1178,18 +1745,18 @@ const handleTambahTransaksi = async (e) => {
                         <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                         <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                         <Tooltip cursor={{ fill: chartCursorFill }} contentStyle={chartTooltipStyle} />
-                        <Bar dataKey="jumlah" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="jumlah" fill="#3b82f6" radius={[4, 4, 0, 0]} animationDuration={800} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light" style={{ animationDelay: '160ms' }}>
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Proporsi Gender Pegawai</h3>
                   <div className="h-64 flex flex-col sm:flex-row items-center justify-center gap-4">
                     <div className="w-full h-52">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={dataStatistikGenderTampil} cx="50%" cy="50%" innerRadius={45} outerRadius={80} paddingAngle={4} dataKey="value" stroke="none">
+                          <Pie data={dataStatistikGenderTampil} cx="50%" cy="50%" innerRadius={45} outerRadius={80} paddingAngle={4} dataKey="value" stroke="none" animationDuration={800}>
                             {dataStatistikGenderTampil.map((entry, index) => (<Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />))}
                           </Pie>
                           <Tooltip contentStyle={chartTooltipStyle} />
@@ -1199,12 +1766,12 @@ const handleTambahTransaksi = async (e) => {
                     </div>
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                <div className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light" style={{ animationDelay: '240ms' }}>
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Sebaran Golongan Darah</h3>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={dataStatistikGoldarTampil} cx="50%" cy="50%" outerRadius={80} dataKey="value" stroke="none">
+                        <Pie data={dataStatistikGoldarTampil} cx="50%" cy="50%" outerRadius={80} dataKey="value" stroke="none" animationDuration={800}>
                           {dataStatistikGoldarTampil.map((entry, index) => (<Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />))}
                         </Pie>
                         <Tooltip contentStyle={chartTooltipStyle} />
@@ -1216,22 +1783,22 @@ const handleTambahTransaksi = async (e) => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+                <div className="card-hover bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Tingkat Pendidikan Terakhir</h3>
                   <div className="space-y-3 text-xs">
                     {dataStatistikPendidikanTampil.map((p, idx) => (
-                      <div key={idx} className={`flex justify-between items-center p-3 rounded-xl transition-colors ${isDarkMode ? "bg-slate-900/40 border border-slate-700/50 hover:bg-slate-800/60" : "bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"}`}>
+                      <div key={idx} className={`flex justify-between items-center p-3 rounded-xl transition-all hover:scale-[1.015] ${isDarkMode ? "bg-slate-900/40 border border-slate-700/50 hover:bg-slate-800/60" : "bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"}`}>
                         <span className={`${isDarkMode ? "text-slate-200" : "text-slate-700"} font-medium`}>{p.name}</span>
                         <span className="font-bold text-[#D4AF37] px-2 py-1 bg-[#D4AF37]/10 rounded-md">{p.jumlah} Pegawai</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+                <div className="card-hover bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Struktur Eselonering / Jabatan</h3>
                   <div className="space-y-3 text-xs">
                     {dataStatistikJabatanTampil.map((j, idx) => (
-                      <div key={idx} className={`flex justify-between items-center p-3 rounded-xl transition-colors ${isDarkMode ? "bg-slate-900/40 border border-slate-700/50 hover:bg-slate-800/60" : "bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"}`}>
+                      <div key={idx} className={`flex justify-between items-center p-3 rounded-xl transition-all hover:scale-[1.015] ${isDarkMode ? "bg-slate-900/40 border border-slate-700/50 hover:bg-slate-800/60" : "bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"}`}>
                         <span className={`${isDarkMode ? "text-slate-200" : "text-slate-700"} font-medium`}>{j.name}</span>
                         <span className="font-bold text-blue-400 px-2 py-1 bg-blue-500/10 rounded-md">{j.jumlah} Orang</span>
                       </div>
@@ -1240,11 +1807,11 @@ const handleTambahTransaksi = async (e) => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
+              <div className="card-hover bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-6 rounded-2xl shadow-xl theme-panel-light">
                   <h3 className={`text-xs font-black mb-5 uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Klasifikasi Agama</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                     {dataStatistikAgamaTampil.map((a, idx) => (
-                      <div key={idx} className={`flex justify-between items-center p-3 rounded-xl transition-colors ${isDarkMode ? "bg-slate-900/40 border border-slate-700/50 hover:bg-slate-800/60" : "bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"}`}>
+                      <div key={idx} className={`flex justify-between items-center p-3 rounded-xl transition-all hover:scale-[1.015] ${isDarkMode ? "bg-slate-900/40 border border-slate-700/50 hover:bg-slate-800/60" : "bg-white border border-slate-200 hover:bg-slate-50 shadow-sm"}`}>
                         <span className={`${isDarkMode ? "text-slate-200" : "text-slate-700"} font-medium`}>{a.name}</span>
                         <span className="font-bold text-emerald-400 px-2 py-1 bg-emerald-500/10 rounded-md">{a.jumlah} Pegawai</span>
                       </div>
@@ -1257,35 +1824,35 @@ const handleTambahTransaksi = async (e) => {
           {/* VIEW: PENGATURAN PROFIL */}
           {currentView === 'profile' && (
             <div className="p-4 max-w-2xl mx-auto w-full animate-fadeIn">
-              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-md theme-surface">
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-md theme-surface card-hover">
                 <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-5">
                   <div className="p-2 bg-[#D4AF37]/10 rounded-xl"><Settings className="text-[#D4AF37]" size={24} /></div>
                   <h3 className="text-base sm:text-lg font-black text-slate-800">Manajemen Profil Kredensial</h3>
                 </div>
                 {profileSuccess && (
-                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 p-3.5 rounded-xl text-xs text-center font-bold mb-5 shadow-sm">{profileSuccess}</div>
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-600 p-3.5 rounded-xl text-xs text-center font-bold mb-5 shadow-sm animate-popIn flex items-center justify-center gap-2"><CheckCircle size={14} /> {profileSuccess}</div>
                 )}
                 <form onSubmit={handleSaveProfile} className="space-y-5 text-sm">
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1.5">Nama Lengkap</label>
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" required />
+                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-400" required />
                   </div>
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1.5">Ubah Password</label>
                     <div className="relative">
-                      <input type={showPassword ? "text" : "password"} value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 pr-12 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition" required />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4AF37] focus:outline-none transition-colors">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                      <input type={showPassword ? "text" : "password"} value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 pr-12 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-400" required />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="btn-press absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#D4AF37] focus:outline-none">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                     </div>
                   </div>
                   <div>
                     <label className="text-slate-700 font-semibold block mb-1.5">Asal Bagian / Unit Kerja</label>
-                    <select value={editUnit} onChange={(e) => setEditUnit(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition cursor-pointer">
+                    <select value={editUnit} onChange={(e) => setEditUnit(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-slate-900 focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 transition-all hover:border-slate-400 cursor-pointer">
                       <option>Bagian Umum</option><option>PKN</option><option>Lelang</option><option>KIHI</option>
                     </select>
                   </div>
                   <div className="pt-6 border-t border-slate-200 flex items-center justify-end gap-3">
-                    <button type="button" onClick={() => setCurrentView('dashboard')} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-3 rounded-xl transition-colors">Batal</button>
-                    <button type="submit" className="bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black px-6 py-3 rounded-xl flex items-center gap-2 transition-transform hover:scale-[1.02] shadow-md text-xs tracking-wider"><UserCheck size={16} /> Simpan Perubahan Profil</button>
+                    <button type="button" onClick={() => setCurrentView('dashboard')} className="btn-press bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-3 rounded-xl">Batal</button>
+                    <button type="submit" className="btn-press bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black px-6 py-3 rounded-xl flex items-center gap-2 shadow-md text-xs tracking-wider"><UserCheck size={16} /> Simpan Perubahan Profil</button>
                   </div>
                 </form>
               </div>
@@ -1297,11 +1864,11 @@ const handleTambahTransaksi = async (e) => {
 
         {/* MODAL 1: DAFTAR PEGAWAI DINAMIS */}
         {showPegawaiModal && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-            <div className={`w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setShowPegawaiModal(false)}>
+            <div onClick={(e) => e.stopPropagation()} className={`w-full max-w-5xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
                <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
                   <h3 className={`text-lg font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-slate-800'}`}>Daftar Pegawai Terpadu ({daftarPegawai.length} Orang)</h3>
-                  <button onClick={() => setShowPegawaiModal(false)} className="text-slate-400 hover:text-rose-500 transition-colors p-2"><X size={20}/></button>
+                  <button onClick={() => setShowPegawaiModal(false)} aria-label="Tutup" className="btn-press text-slate-400 hover:text-rose-500 hover:rotate-90 p-2 rounded-full hover:bg-rose-500/10"><X size={20}/></button>
                </div>
                
                <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
@@ -1312,7 +1879,7 @@ const handleTambahTransaksi = async (e) => {
                       placeholder="Cari berdasarkan nama, NIP, jabatan, atau unit..." 
                       value={searchPegawai}
                       onChange={(e) => setSearchPegawai(e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none transition-colors border ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-200 focus:border-[#D4AF37]' : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-[#D4AF37]'}`}
+                      className={`w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none transition-all border ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-200 focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30' : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30'}`}
                     />
                   </div>
                   <div className={`rounded-xl border overflow-hidden ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
@@ -1325,7 +1892,7 @@ const handleTambahTransaksi = async (e) => {
                       </thead>
                       <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700/50 text-slate-300' : 'divide-slate-200 text-slate-600'}`}>
                         {filteredPegawai.map((p, index) => (
-                          <tr key={p.id} className={isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'}>
+                          <tr key={p.id} className={`transition-colors ${isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'}`}>
                             <td className="p-3">{index + 1}</td>
                             <td className="p-3 font-mono text-[11px] text-[#D4AF37]">{p.nip}</td>
                             <td className="p-3 font-semibold">{p.nama}</td>
@@ -1335,14 +1902,19 @@ const handleTambahTransaksi = async (e) => {
                           </tr>
                         ))}
                         {filteredPegawai.length === 0 && (
-                          <tr><td colSpan="6" className="py-8 text-center text-slate-500">Pencarian "{searchPegawai}" tidak ditemukan pada data ini.</td></tr>
+                          <tr><td colSpan="6" className="py-10 text-center">
+                            <div className="flex flex-col items-center gap-2 text-slate-500">
+                              <Search size={22} className="opacity-40" />
+                              <span>Pencarian "{searchPegawai}" tidak ditemukan pada data ini.</span>
+                            </div>
+                          </td></tr>
                         )}
                       </tbody>
                     </table>
                   </div>
                </div>
                <div className="p-4 border-t border-slate-700/50 flex justify-end">
-                  <button onClick={() => setShowPegawaiModal(false)} className="px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-colors">Tutup Jendela</button>
+                  <button onClick={() => setShowPegawaiModal(false)} className="btn-press px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold">Tutup Jendela</button>
                </div>
             </div>
           </div>
@@ -1350,27 +1922,27 @@ const handleTambahTransaksi = async (e) => {
 
         {/* MODAL 2: DETAIL UNIT KERJA */}
         {showUnitModal && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-            <div className={`w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setShowUnitModal(false)}>
+            <div onClick={(e) => e.stopPropagation()} className={`w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
                <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
                   <h3 className={`text-lg font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-slate-800'}`}>Detail Unit: Bidang PKN</h3>
-                  <button onClick={() => setShowUnitModal(false)} className="text-slate-400 hover:text-rose-500 transition-colors p-2"><X size={20}/></button>
+                  <button onClick={() => setShowUnitModal(false)} aria-label="Tutup" className="btn-press text-slate-400 hover:text-rose-500 hover:rotate-90 p-2 rounded-full hover:bg-rose-500/10"><X size={20}/></button>
                </div>
                <div className="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                     <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                     <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Total Pegawai</span>
                         <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>9</span>
                      </div>
-                     <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                     <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Realisasi</span>
                         <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Rp 18.45 Miliar</span>
                      </div>
-                     <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                     <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Persentase</span>
                         <span className="text-xl font-black text-emerald-500">68,45%</span>
                      </div>
-                     <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                     <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Total Transaksi</span>
                         <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>24</span>
                      </div>
@@ -1384,14 +1956,14 @@ const handleTambahTransaksi = async (e) => {
                           <XAxis dataKey="bulan" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                           <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                           <Tooltip contentStyle={chartTooltipStyle} cursor={{ fill: chartCursorFill }} />
-                          <Bar dataKey="Realisasi" fill="#10B981" radius={[2, 2, 0, 0]} barSize={20} />
+                          <Bar dataKey="Realisasi" fill="#10B981" radius={[2, 2, 0, 0]} barSize={20} animationDuration={800} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
                </div>
                <div className="p-4 border-t border-slate-700/50 flex justify-end">
-                  <button onClick={() => setShowUnitModal(false)} className="px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-colors">Tutup</button>
+                  <button onClick={() => setShowUnitModal(false)} className="btn-press px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold">Tutup</button>
                </div>
             </div>
           </div>
