@@ -236,6 +236,10 @@ export default function App() {
   const [showUnitModal, setShowUnitModal] = useState(false);
   const [searchPegawai, setSearchPegawai] = useState('');
   const [searchTransaksi, setSearchTransaksi] = useState('');
+  const [pegawaiPage, setPegawaiPage] = useState(1);
+  const [pegawaiPerPage, setPegawaiPerPage] = useState(20);
+  const [selectedPegawaiIds, setSelectedPegawaiIds] = useState([]);
+  const selectAllPegawaiRef = useRef(null);
 
   // Menutup modal drill-down dengan tombol Escape (kenyamanan & aksesibilitas keyboard)
   useEffect(() => {
@@ -291,6 +295,42 @@ export default function App() {
     setToast({ show: true, type, message });
     setTimeout(() => setToast({ show: false, type: '', message: '' }), 4000);
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadPegawaiFromBackend = async () => {
+      try {
+        const headers = {};
+        const token = localStorage.getItem('djkn_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const response = await fetch('/api/pegawai', { headers });
+        if (!response.ok) throw new Error('Gagal mengambil data pegawai');
+        const data = await response.json();
+        if (!isMounted) return;
+
+        const normalized = Array.isArray(data)
+          ? data.map((item, index) => ({
+              ...item,
+              id: item.id ?? index + 1,
+              pendidikan: item.pendidikan || 'Tidak Diketahui',
+              generasi: item.generasi || 'Tidak Diketahui',
+              goldar: item.goldar || 'Tidak Diketahui',
+              agama: item.agama || 'Tidak Diketahui',
+              eselon: item.eselon || 'Tidak Diketahui'
+            }))
+          : [];
+
+        setDaftarPegawai(normalized.length > 0 ? normalized : generatePegawaiData());
+      } catch (error) {
+        if (!isMounted) return;
+        setDaftarPegawai(generatePegawaiData());
+        showToast('Tidak dapat terhubung ke backend MySQL. Menggunakan data contoh.', 'error');
+      }
+    };
+
+    loadPegawaiFromBackend();
+    return () => { isMounted = false; };
+  }, []);
 
   // --- STATE INPUT FORM REGISTRASI ---
   const [authName, setAuthName] = useState('');
@@ -367,6 +407,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('djkn_transaksi', JSON.stringify(transaksi)); }, [transaksi]);
   useEffect(() => { setSelectedTransaksi((prev) => prev.filter((id) => transaksi.some((t) => t.id === id))); }, [transaksi]);
   useEffect(() => { if (selectAllTransaksiRef.current) { selectAllTransaksiRef.current.indeterminate = isSomeTransaksiSelected; } }, [isSomeTransaksiSelected]);
+  
 
   const [uraianInput, setUraianInput] = useState('');
   const [nominalInput, setNominalInput] = useState('');
@@ -379,26 +420,70 @@ export default function App() {
     if (!isNameValid || !isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
       showToast('Formulir pendaftaran tidak valid. Harap penuhi semua ketentuan!', 'error'); return;
     }
-    const userBaru = { username: authUsername.trim(), email: authEmail.trim().toLowerCase(), password: authPassword, name: authName.trim(), role: authRole, unit: authUnit };
-    setDatabaseUsers([...databaseUsers, userBaru]);
-    showToast('Akun berhasil didaftarkan! Silakan masuk.', 'success');
-    setAuthName(''); setAuthUsername(''); setAuthEmail(''); setAuthPassword(''); setAuthConfirmPassword('');
-    setTimeout(() => setIsRegisterMode(false), 2000);
+    (async () => {
+      try {
+        // Development: backend expects a seed token by default 'letmein'.
+        // You can change/X-SEED-TOKEN via env on server. For now use header.
+        const seedToken = 'letmein';
+        const resp = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-seed-token': seedToken },
+          body: JSON.stringify({ username: authUsername.trim(), password: authPassword, role: authRole })
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error || 'Gagal mendaftar');
+        }
+        // auto-login after register
+        const loginResp = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername.trim(), password: authPassword }) });
+        if (!loginResp.ok) {
+          const err = await loginResp.json().catch(() => ({}));
+          throw new Error(err.error || 'Pendaftaran berhasil tetapi login otomatis gagal');
+        }
+        const json = await loginResp.json();
+        const token = json.token;
+        if (!token) throw new Error('Token tidak diterima dari server');
+        localStorage.setItem('djkn_token', token);
+        try { const payload = JSON.parse(atob(token.split('.')[1])); setSessionUser({ username: payload.username, role: payload.role, id: payload.id, name: authName.trim(), unit: authUnit }); } catch { setSessionUser({ username: authUsername.trim(), role: authRole, name: authName.trim(), unit: authUnit }); }
+        setIsLoggedIn(true); setShowAuthForm(false); setIsRegisterMode(false);
+        setAuthName(''); setAuthUsername(''); setAuthEmail(''); setAuthPassword(''); setAuthConfirmPassword('');
+        showToast('Akun berhasil dibuat dan login otomatis.', 'success');
+      } catch (e) {
+        console.error(e);
+        showToast(e.message || 'Gagal mendaftar', 'error');
+      }
+    })();
   };
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const userDitemukan = databaseUsers.find(
-      (u) => (u.username.toLowerCase() === authUsername.toLowerCase() || u.email?.toLowerCase() === authUsername.toLowerCase()) && u.password === authPassword
-    );
-    if (userDitemukan) {
-      localStorage.setItem('djkn_session', JSON.stringify(userDitemukan));
-      setSessionUser(userDitemukan); setIsLoggedIn(true); setShowAuthForm(false); setCurrentView('dashboard'); 
-      setAuthUsername(''); setAuthPassword(''); showToast(`Selamat datang kembali, ${userDitemukan.name}!`, 'success');
-    } else { showToast('Username, Email, atau Password salah!', 'error'); }
+    (async () => {
+      try {
+        const resp = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername, password: authPassword }) });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          throw new Error(err.error || 'Login gagal');
+        }
+        const json = await resp.json();
+        const token = json.token;
+        if (!token) throw new Error('Token tidak diterima');
+        localStorage.setItem('djkn_token', token);
+        // decode token payload
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const user = { username: payload.username, role: payload.role, id: payload.id };
+          setSessionUser(user);
+        } catch (e) { setSessionUser({ username: authUsername }); }
+        setIsLoggedIn(true); setShowAuthForm(false); setCurrentView('dashboard');
+        setAuthUsername(''); setAuthPassword(''); showToast('Login berhasil.', 'success');
+      } catch (e) {
+        console.error(e);
+        showToast(e.message || 'Login gagal', 'error');
+      }
+    })();
   };
 
-  const handleLogout = () => { localStorage.removeItem('djkn_session'); setIsLoggedIn(false); setSessionUser(null); setIsMobileMenuOpen(false); };
+  const handleLogout = () => { localStorage.removeItem('djkn_session'); localStorage.removeItem('djkn_token'); setIsLoggedIn(false); setSessionUser(null); setIsMobileMenuOpen(false); };
   const navigateTo = (view) => { setCurrentView(view); setIsMobileMenuOpen(false); };
   const handleSaveProfile = (e) => {
     e.preventDefault(); setProfileSuccess('');
@@ -498,6 +583,9 @@ const handleTambahTransaksi = (e) => {
 
   // --- IMPORT EXCEL STATISTIK PEGAWAI (DINAMIS & ROBUST) ---
   const [isImportingStatistik, setIsImportingStatistik] = useState(false);
+  const [parsedPreview, setParsedPreview] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [isUploadingPreview, setIsUploadingPreview] = useState(false);
   const handleImportStatistikExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -580,9 +668,13 @@ const handleTambahTransaksi = (e) => {
            });
         }
 
-        setDaftarPegawai(parsedData); 
-        setStatistikExcelFileName(file.name); 
-        showToast(`Berhasil mengimpor ${parsedData.length} data pegawai! Statistik & Daftar Pegawai telah diupdate otomatis.`, 'success');
+        setDaftarPegawai(parsedData);
+        setStatistikExcelFileName(file.name);
+
+        // simpan untuk preview dan konfirmasi upload ke server
+        setParsedPreview(parsedData.slice(0, 500)); // preview up to 500 rows
+        setShowPreviewModal(true);
+        showToast(`File berhasil diparse. Tampilkan pratinjau sebelum mengirim ke server. (${parsedData.length} baris)`, 'success');
       } catch (error) { 
         showToast('Gagal membaca file statistik. Pastikan file Excel valid dan tidak rusak.', 'error'); 
       } finally { 
@@ -598,6 +690,56 @@ const handleTambahTransaksi = (e) => {
     setStatistikExcelFileName('');
     showToast('Data pegawai dikembalikan ke data contoh.', 'success');
   };
+
+  const sendPreviewToServer = async () => {
+    if (!parsedPreview) return;
+    setIsUploadingPreview(true);
+    try {
+      // send full parsed data if available in memory; otherwise send preview only
+      const payload = parsedPreview.map(p => ({ nip: p.nip, nama: p.nama, eselon: p.eselon, unit: p.unit, jk: p.jk, pendidikan: p.pendidikan, generasi: p.generasi, goldar: p.goldar, agama: p.agama }));
+      const headers = { 'Content-Type': 'application/json' };
+      const token = localStorage.getItem('djkn_token');
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const resp = await fetch('/api/pegawai/bulk', { method: 'POST', headers, body: JSON.stringify(payload) });
+      if (!resp.ok) throw new Error((await resp.json()).error || 'Gagal mengirim ke server');
+      const json = await resp.json();
+      setShowPreviewModal(false);
+      setParsedPreview(null);
+      const failed = Array.isArray(json.errors) ? json.errors.length : 0;
+      showToast(`Server memasukkan ${json.insertedRows || 0} baris. Gagal: ${failed} baris.`, 'success');
+      if (failed > 0) console.warn('Baris gagal:', json.errors);
+    } catch (err) {
+      console.error(err);
+      showToast('Gagal mengirim ke server. Cek koneksi atau backend.', 'error');
+    } finally {
+      setIsUploadingPreview(false);
+    }
+  };
+
+  // ===== Export / Template helpers =====
+  const downloadCSV = (rows, filename = 'export.csv') => {
+    if (!Array.isArray(rows)) rows = [];
+    const keys = Object.keys(rows[0] || { nip: 'nip', nama: 'nama', eselon: 'eselon', unit: 'unit', jk: 'jk', pendidikan: 'pendidikan', generasi: 'generasi', goldar: 'goldar', agama: 'agama' });
+    const lines = [keys.join(',')].concat(rows.map(r => keys.map(k => '"' + String(r[k] ?? '').replace(/"/g, '""') + '"').join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const downloadExcel = (rows, filename = 'export.xlsx') => {
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'pegawai');
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const downloadTemplate = () => {
+    const template = [{ nip: '1987123456', nama: 'Nama Lengkap', eselon: 'Eselon IV / Setara', unit: 'Bagian Umum', jk: 'Laki-Laki', pendidikan: 'S-1', generasi: 'Gen Y (1981-1996)', goldar: 'O', agama: 'Islam' }];
+    downloadExcel(template, 'template_pegawai.xlsx');
+  };
+
+  const discardPreview = () => { setShowPreviewModal(false); setParsedPreview(null); showToast('Pratinjau dibatalkan.', 'info'); };
   
   const scrollToSection = (id) => { setIsLandingMobileMenuOpen(false); const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); };
 
@@ -629,6 +771,17 @@ const handleTambahTransaksi = (e) => {
     p.jabatan.toLowerCase().includes(searchPegawai.toLowerCase()) || 
     p.unit.toLowerCase().includes(searchPegawai.toLowerCase())
   );
+
+  useEffect(() => {
+    if (!selectAllPegawaiRef.current) return;
+    try {
+      const currentPageItems = filteredPegawai.slice((pegawaiPage-1)*pegawaiPerPage, pegawaiPage*pegawaiPerPage).map(p=>p.id);
+      const selectedOnPage = currentPageItems.filter(id=>selectedPegawaiIds.includes(id));
+      selectAllPegawaiRef.current.indeterminate = selectedOnPage.length > 0 && selectedOnPage.length < currentPageItems.length;
+    } catch (e) {
+      // defensive: if filteredPegawai is not ready, ignore
+    }
+  }, [selectedPegawaiIds, pegawaiPage, filteredPegawai, pegawaiPerPage]);
 
   const filteredTransaksi = useMemo(() => {
     if (!searchTransaksi.trim()) return transaksi;
@@ -1186,7 +1339,7 @@ const handleTambahTransaksi = (e) => {
           </div>
 
           {/* ── GRID UTAMA ── */}
-          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
 
             {/* KOLOM KIRI: PETA + KONTROL */}
             <div className="lg:col-span-3 space-y-4">
@@ -1224,16 +1377,18 @@ const handleTambahTransaksi = (e) => {
                   <div className="w-2 h-2 rounded-full bg-[#D4AF37] pulse-dot" />
                   <span className="text-[11px] font-bold text-[#D4AF37] tracking-wide">GKN Medan</span>
                 </div>
-                <iframe
+                <div className="w-full h-64 sm:h-80">
+                  <iframe
                   title="Lokasi Gedung Keuangan Negara Medan"
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3982.0143697937793!2d98.67131577597595!3d3.5912688963289975!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30313040b2b7a2eb%3A0x4498e0a55a2d8082!2sGedung%20Keuangan%20Negara%20Medan!5e0!3m2!1sid!2sid!4v1719000000000!5m2!1sid!2sid"
-                  width="100%"
-                  height="340"
-                  style={{ border: 0, display: 'block' }}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, display: 'block' }}
                   allowFullScreen=""
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                />
+                  />
+                </div>
               </div>
 
               {/* ── SELECTOR MODE TRANSPORTASI ── */}
@@ -1287,7 +1442,7 @@ const handleTambahTransaksi = (e) => {
             </div>
 
             {/* KOLOM KANAN: INFO KONTAK */}
-            <div className="lg:col-span-2 space-y-7">
+            <div className="lg:col-span-1 space-y-7">
 
               {/* Identitas Kantor */}
               <div className="flex items-center gap-4">
@@ -1301,49 +1456,46 @@ const handleTambahTransaksi = (e) => {
               {/* Kartu-kartu Kontak */}
               <div className="space-y-3">
                 {/* Alamat */}
-                <a href="https://www.google.com/maps/search/?api=1&query=Gedung+Keuangan+Negara+Medan" target="_blank" rel="noreferrer"
-                  className="flex items-start gap-3.5 group p-3.5 rounded-xl border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all">
+                <a href="https://www.google.com/maps/search/?api=1&query=Gedung+Keuangan+Negara+Medan" target="_blank" rel="noreferrer" className={`flex items-start gap-3.5 group p-3.5 rounded-xl transition-all ${isDarkMode ? 'border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5' : 'bg-white border border-slate-200 hover:border-[#D4AF37]/30 hover:bg-[#FEF9EE]'}`}>
                   <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0 mt-0.5"><MapPin size={16} className="text-[#D4AF37]" /></div>
                   <div>
-                    <p className="text-white font-bold text-sm leading-snug">Gedung Keuangan Negara (GKN) Medan</p>
-                    <p className="text-slate-400 text-xs mt-1 leading-relaxed">Jl. Pangeran Diponegoro No.30-A<br/>Medan Baru, Kota Medan 20152</p>
+                    <p className={`${isDarkMode ? 'text-white' : 'text-slate-900'} font-bold text-sm leading-snug`}>Gedung Keuangan Negara (GKN) Medan</p>
+                    <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} text-xs mt-1 leading-relaxed`}>Jl. Pangeran Diponegoro No.30-A<br/>Medan Baru, Kota Medan 20152</p>
                     <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold text-[#D4AF37] group-hover:underline">Lihat di Maps <ArrowUpRight size={10} /></span>
                   </div>
                 </a>
 
-                {/* Email */}
-                <a href="mailto:kanwil.sumut@kemenkeu.go.id"
-                  className="flex items-center gap-3.5 group p-3.5 rounded-xl border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all">
-                  <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0"><Mail size={16} className="text-[#D4AF37]" /></div>
-                  <div>
-                    <p className="text-white font-bold text-sm">kanwil.sumut@kemenkeu.go.id</p>
-                    <p className="text-slate-400 text-xs mt-0.5">Email resmi institusi</p>
-                  </div>
-                </a>
+                <div className="grid gap-3">
+                  <a href="mailto:kanwil.sumut@kemenkeu.go.id" className={`flex items-center gap-3.5 group p-3.5 rounded-xl transition-all ${isDarkMode ? 'border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5' : 'bg-white border border-slate-200 hover:border-[#D4AF37]/30 hover:bg-[#FEF9EE]'}`}>
+                    <div className="p-2.5 rounded-xl transition-colors shrink-0" style={{ background: isDarkMode ? '#0f1724' : '#fff' }}><Mail size={16} className="text-[#D4AF37]" /></div>
+                    <div>
+                      <p className={`${isDarkMode ? 'text-white' : 'text-slate-900'} font-bold text-sm`}>kanwil.sumut@kemenkeu.go.id</p>
+                      <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} text-xs mt-0.5`}>Email resmi institusi</p>
+                    </div>
+                  </a>
 
-                {/* Telepon */}
-                <a href="tel:+62614538558"
-                  className="flex items-center gap-3.5 group p-3.5 rounded-xl border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5 transition-all">
-                  <div className="p-2.5 bg-slate-800 rounded-xl group-hover:bg-[#D4AF37]/20 transition-colors shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12.3a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.6h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.1a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  </div>
-                  <div>
-                    <p className="text-white font-bold text-sm">(061) 453-8558</p>
-                    <p className="text-slate-400 text-xs mt-0.5">Telepon kantor</p>
-                  </div>
-                </a>
+                  <a href="tel:+62614538558" className={`flex items-center gap-3.5 group p-3.5 rounded-xl transition-all ${isDarkMode ? 'border border-transparent hover:border-[#D4AF37]/30 hover:bg-[#D4AF37]/5' : 'bg-white border border-slate-200 hover:border-[#D4AF37]/30 hover:bg-[#FEF9EE]'}`}>
+                    <div className="p-2.5 rounded-xl transition-colors shrink-0" style={{ background: isDarkMode ? '#0f1724' : '#fff' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12.3a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.6h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.1a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </div>
+                    <div>
+                      <p className={`${isDarkMode ? 'text-white' : 'text-slate-900'} font-bold text-sm`}>(061) 453-8558</p>
+                      <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'} text-xs mt-0.5`}>Telepon kantor</p>
+                    </div>
+                  </a>
+                </div>
 
                 {/* Jam Operasional */}
-                <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-800/50 border border-slate-700/60">
-                  <div className="p-2.5 bg-slate-700 rounded-xl shrink-0 mt-0.5">
+                <div className={`flex items-start gap-3.5 p-3.5 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800/50 border border-slate-700/60' : 'bg-white border border-slate-200 shadow-sm'}`}>
+                  <div className="p-2.5 rounded-xl shrink-0 mt-0.5" style={{ background: isDarkMode ? '#0f1724' : '#fff' }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   </div>
                   <div>
-                    <p className="text-white font-bold text-sm mb-1.5">Jam Operasional</p>
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between"><span className="text-slate-400">Senin – Kamis</span><span className="text-white font-semibold">07.30 – 17.00 WIB</span></div>
-                      <div className="flex justify-between"><span className="text-slate-400">Jumat</span><span className="text-white font-semibold">07.30 – 17.30 WIB</span></div>
-                      <div className="flex justify-between"><span className="text-slate-400">Sabtu & Minggu</span><span className="text-slate-500 font-semibold">Libur</span></div>
+                    <p className={`${isDarkMode ? 'text-white' : 'text-slate-900'} font-bold text-sm mb-1.5`}>Jam Operasional</p>
+                    <div className={`grid grid-cols-2 gap-x-4 gap-y-1 text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                      <div>Senin – Kamis</div><div className="justify-self-end font-semibold">07.30 – 17.00 WIB</div>
+                      <div>Jumat</div><div className="justify-self-end font-semibold">07.30 – 17.30 WIB</div>
+                      <div>Sabtu & Minggu</div><div className="justify-self-end font-semibold text-slate-500">Libur</div>
                     </div>
                   </div>
                 </div>
@@ -1377,6 +1529,14 @@ const handleTambahTransaksi = (e) => {
       <style>{THEME_STYLE}</style>
       <ToastNotification />
       
+      {/* Floating export/template button */}
+      <div className="fixed right-6 bottom-6 z-50 flex flex-col gap-3">
+        <button onClick={() => downloadTemplate()} className="btn-press bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold shadow-md">Unduh Template</button>
+        <div className="flex gap-2">
+          <button onClick={() => downloadCSV(daftarPegawai, 'pegawai_export.csv')} className="btn-press bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold shadow-md">Export CSV</button>
+          <button onClick={() => downloadExcel(daftarPegawai, 'pegawai_export.xlsx')} className="btn-press bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold shadow-md">Export Excel</button>
+        </div>
+      </div>
       {/* 1. TOP BAR MOBILE */}
       <header className="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-md theme-dashboard-top">
         <div className="flex items-center gap-3">
@@ -1862,6 +2022,46 @@ const handleTambahTransaksi = (e) => {
 
         {/* ==================== MODAL DRILL-DOWN ==================== */}
 
+        {/* MODAL: Preview Import Pegawai */}
+        {showPreviewModal && parsedPreview && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setShowPreviewModal(false)}>
+            <div onClick={e => e.stopPropagation()} className={`w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
+              <div className="flex items-center justify-between p-5 border-b">
+                <h3 className={`font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Pratinjau Data Pegawai ({parsedPreview.length} baris)</h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={discardPreview} className="px-4 py-2 rounded-xl text-sm bg-slate-100 hover:bg-slate-200">Batal</button>
+                  <button onClick={sendPreviewToServer} disabled={isUploadingPreview} className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] font-bold">{isUploadingPreview ? 'Mengirim...' : 'Kirim ke Server'}</button>
+                </div>
+              </div>
+              <div className="p-4 overflow-auto custom-scrollbar">
+                <table className="w-full text-left text-xs">
+                  <thead className={`border-b ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-700'}`}>
+                    <tr>
+                      <th className="p-2 font-bold">No</th>
+                      <th className="p-2 font-bold">NIP</th>
+                      <th className="p-2 font-bold">Nama</th>
+                      <th className="p-2 font-bold">Jabatan</th>
+                      <th className="p-2 font-bold">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700 text-slate-300' : 'divide-slate-200 text-slate-600'}`}>
+                    {parsedPreview.map((p, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
+                        <td className="p-2 align-top">{idx + 1}</td>
+                        <td className="p-2 font-mono text-[12px] text-[#D4AF37]">{p.nip}</td>
+                        <td className="p-2 font-semibold">{p.nama}</td>
+                        <td className="p-2">{p.jabatan || p.eselon}</td>
+                        <td className="p-2">{p.unit}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="text-[12px] mt-3 text-slate-500">Catatan: hanya menampilkan hingga 500 baris untuk pratinjau. Klik "Kirim ke Server" untuk menyimpan ke database.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* MODAL 1: DAFTAR PEGAWAI DINAMIS */}
         {showPegawaiModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setShowPegawaiModal(false)}>
@@ -1872,6 +2072,96 @@ const handleTambahTransaksi = (e) => {
                </div>
                
                <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                  {/* pagination + selection helpers */}
+                  {(() => {
+                    const totalPages = Math.max(1, Math.ceil(filteredPegawai.length / pegawaiPerPage));
+                    const start = (pegawaiPage - 1) * pegawaiPerPage;
+                    const paged = filteredPegawai.slice(start, start + pegawaiPerPage);
+                    // attach to render via closure
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => {
+                              const onPageIds = paged.map(p => p.id);
+                              const allSelected = onPageIds.every(id => selectedPegawaiIds.includes(id));
+                              if (allSelected) setSelectedPegawaiIds(prev => prev.filter(id => !onPageIds.includes(id))); else setSelectedPegawaiIds(prev => Array.from(new Set([...prev, ...onPageIds])));
+                            }} className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm">Toggle Select Page</button>
+                            <button onClick={() => {
+                              if (selectedPegawaiIds.length === 0) return showToast('Pilih pegawai terlebih dahulu', 'error');
+                              if (!confirm(`Hapus ${selectedPegawaiIds.length} pegawai dari daftar lokal?`)) return;
+                              setDaftarPegawai(prev => prev.filter(p => !selectedPegawaiIds.includes(p.id)));
+                              setSelectedPegawaiIds([]);
+                              showToast('Data pegawai terhapus (lokal).', 'success');
+                            }} className="px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">Hapus Terpilih</button>
+                          </div>
+                          <div className="text-sm text-slate-500">Halaman {pegawaiPage} / {totalPages} • {filteredPegawai.length} hasil</div>
+                        </div>
+                        <div className={`rounded-xl border overflow-hidden ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                          <table className="w-full text-left text-xs">
+                            <thead className={`border-b ${isDarkMode ? 'bg-slate-800/80 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                              <tr>
+                                <th className="p-3 font-bold"><input ref={selectAllPegawaiRef} type="checkbox" checked={paged.every(p=>selectedPegawaiIds.includes(p.id)) && paged.length>0} onChange={(e)=>{
+                                  const onPageIds = paged.map(p=>p.id);
+                                  if (e.target.checked) setSelectedPegawaiIds(prev=>Array.from(new Set([...prev, ...onPageIds]))); else setSelectedPegawaiIds(prev=>prev.filter(id=>!onPageIds.includes(id)));
+                                }} /></th>
+                                  <th className="p-3 font-bold">No</th><th className="p-3 font-bold">NIP</th><th className="p-3 font-bold">Nama</th>
+                                  <th className="p-3 font-bold">Jabatan</th><th className="p-3 font-bold">Unit / Bidang</th><th className="p-3 font-bold">Pendidikan</th><th className="p-3 font-bold">Foto</th>
+                              </tr>
+                            </thead>
+                            <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700/50 text-slate-300' : 'divide-slate-200 text-slate-600'}`}>
+                              {paged.map((p, index) => (
+                                <tr key={p.id} className={`transition-colors ${isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'}`}>
+                                  <td className="p-3"><input type="checkbox" checked={selectedPegawaiIds.includes(p.id)} onChange={() => setSelectedPegawaiIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id])} /></td>
+                                  <td className="p-3">{start + index + 1}</td>
+                                  <td className="p-3 font-mono text-[11px] text-[#D4AF37]">{p.nip}</td>
+                                  <td className="p-3 font-semibold">{p.nama}</td>
+                                  <td className="p-3"><span className="px-2 py-1 bg-slate-500/10 rounded-md">{p.jabatan}</span></td>
+                                  <td className="p-3">{p.unit}</td>
+                                  <td className="p-3">{p.pendidikan}</td>
+                                  <td className="p-3">
+                                    {p.photo ? (
+                                      <img src={`/${p.photo}`} alt="foto" className="h-10 w-10 object-cover rounded-full" />
+                                    ) : (
+                                      <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-400">No</div>
+                                    )}
+                                    <div className="mt-2">
+                                      <input type="file" accept="image/*" onChange={async (e)=>{
+                                        const file = e.target.files && e.target.files[0]; if (!file) return;
+                                        const form = new FormData(); form.append('photo', file);
+                                        const token = localStorage.getItem('djkn_token');
+                                        try {
+                                          const res = await fetch(`/api/pegawai/${p.id}/photo`, { method: 'POST', headers: token ? { 'Authorization': `Bearer ${token}` } : {}, body: form });
+                                          if (!res.ok) throw new Error('Upload gagal');
+                                          const js = await res.json();
+                                          // update local state to show image
+                                          setDaftarPegawai(prev => prev.map(item => item.id === p.id ? { ...item, photo: js.photo } : item));
+                                          showToast('Foto berhasil diunggah', 'success');
+                                        } catch (err) { console.error(err); showToast('Gagal mengunggah foto', 'error'); }
+                                      }} />
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="flex items-center justify-between mt-4">
+                          <div className="flex items-center gap-2">
+                            <button disabled={pegawaiPage<=1} onClick={()=>setPegawaiPage(p=>Math.max(1,p-1))} className="px-3 py-2 rounded-xl border bg-slate-50">Prev</button>
+                            <button disabled={pegawaiPage>=totalPages} onClick={()=>setPegawaiPage(p=>Math.min(totalPages,p+1))} className="px-3 py-2 rounded-xl border bg-slate-50">Next</button>
+                          </div>
+                          <div className="text-sm text-slate-500">Tampilkan per halaman:
+                            <select value={pegawaiPerPage} onChange={(e)=>{ setPegawaiPerPage(Number(e.target.value)); setPegawaiPage(1); }} className="ml-2 border rounded px-2 py-1 text-sm">
+                              <option value={10}>10</option>
+                              <option value={20}>20</option>
+                              <option value={50}>50</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="relative mb-6">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search size={16} className="text-slate-400" /></div>
                     <input 
