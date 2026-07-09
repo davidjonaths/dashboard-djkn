@@ -299,12 +299,17 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
     const loadPegawaiFromBackend = async () => {
+      // Jangan jalankan jika pengguna belum login
+      if (!isLoggedIn) {
+        setDaftarPegawai(generatePegawaiData());
+        return;
+      }
       try {
         const headers = {};
         const token = localStorage.getItem('djkn_token');
         if (token) headers['Authorization'] = `Bearer ${token}`;
         const response = await fetch('/api/pegawai', { headers });
-        if (!response.ok) throw new Error('Gagal mengambil data pegawai');
+        if (!response.ok) throw new Error(`Gagal mengambil data pegawai (Status: ${response.status})`);
         const data = await response.json();
         if (!isMounted) return;
 
@@ -330,7 +335,7 @@ export default function App() {
 
     loadPegawaiFromBackend();
     return () => { isMounted = false; };
-  }, []);
+  }, [isLoggedIn]); // <-- Tambahkan isLoggedIn sebagai dependensi
 
   // --- STATE INPUT FORM REGISTRASI ---
   const [authName, setAuthName] = useState('');
@@ -428,12 +433,31 @@ export default function App() {
         const resp = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-seed-token': seedToken },
-          body: JSON.stringify({ username: authUsername.trim(), password: authPassword, role: authRole })
+          body: JSON.stringify({ 
+            username: authUsername.trim(), 
+            password: authPassword, 
+            role: authRole,
+            name: authName.trim(),
+            email: authEmail.trim(),
+            unit: authUnit
+          })
         });
         if (!resp.ok) {
           const err = await resp.json().catch(() => ({}));
           throw new Error(err.error || 'Gagal mendaftar');
         }
+
+        // SOLUSI: Tambahkan user baru ke state databaseUsers di frontend
+        const newUserForDb = {
+          username: authUsername.trim(),
+          password: authPassword, // Sebaiknya backend tidak mengembalikan password
+          email: authEmail.trim(),
+          name: authName.trim(),
+          role: authRole,
+          unit: authUnit
+        };
+        setDatabaseUsers(prevUsers => [...prevUsers, newUserForDb]);
+
         // auto-login after register
         const loginResp = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername.trim(), password: authPassword }) });
         if (!loginResp.ok) {
@@ -471,9 +495,16 @@ export default function App() {
         // decode token payload
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));
-          const user = { username: payload.username, role: payload.role, id: payload.id };
+          // Gunakan data dari payload token sebagai sumber kebenaran
+          const user = { 
+            username: payload.username, 
+            role: payload.role, 
+            id: payload.id,
+            name: payload.name || authUsername, // Fallback ke username jika nama tidak ada di token
+            unit: payload.unit || 'Bagian Umum' // Fallback
+          };
           setSessionUser(user);
-        } catch (e) { setSessionUser({ username: authUsername }); }
+        } catch (e) { console.error("Gagal decode token:", e); setSessionUser({ username: authUsername }); }
         setIsLoggedIn(true); setShowAuthForm(false); setCurrentView('dashboard');
         setAuthUsername(''); setAuthPassword(''); showToast('Login berhasil.', 'success');
       } catch (e) {

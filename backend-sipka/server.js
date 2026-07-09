@@ -68,11 +68,15 @@ async function ensureUsersTable() {
     CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,
       username VARCHAR(100) NOT NULL UNIQUE,
+      email VARCHAR(100) NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
-      role VARCHAR(50) NOT NULL DEFAULT 'editor',
+      role VARCHAR(50) NOT NULL DEFAULT 'pegawai',
+      unit VARCHAR(100),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
+  console.log('Tabel "users" dipastikan ada dan strukturnya sesuai.');
 
   // Optionally create admin user from env
   const adminUser = process.env.ADMIN_USER;
@@ -81,7 +85,7 @@ async function ensureUsersTable() {
     const [rows] = await pool.query('SELECT id FROM users WHERE username = ?', [adminUser]);
     if (rows.length === 0) {
       const hash = await bcrypt.hash(adminPass, 10);
-      await pool.query('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)', [adminUser, hash, 'admin']);
+      await pool.query('INSERT INTO users (username, email, name, password_hash, role, unit) VALUES (?, ?, ?, ?, ?, ?)', [adminUser, `${adminUser}@kemenkeu.go.id`, 'Admin Utama', hash, 'admin', 'Bagian Umum']);
       console.log('Created initial admin user from env');
     }
   }
@@ -90,15 +94,21 @@ async function ensureUsersTable() {
 // ensure pegawai table has photo column
 async function ensurePegawaiPhotoColumn() {
   try {
-    await pool.query("ALTER TABLE pegawai ADD COLUMN IF NOT EXISTS photo VARCHAR(255) DEFAULT NULL");
+    await pool.query("CREATE TABLE IF NOT EXISTS pegawai (id INT)"); // Placeholder if table doesn't exist at all
+    const [cols] = await pool.query("SHOW COLUMNS FROM pegawai LIKE 'photo'");
+    if (cols.length === 0) {
+      await pool.query("ALTER TABLE pegawai ADD COLUMN photo VARCHAR(255) DEFAULT NULL");
+      console.log('Kolom "photo" ditambahkan ke tabel "pegawai".');
+    }
   } catch (e) {
-    // MySQL older versions may error on IF NOT EXISTS; try graceful check
     try {
-      const [rows] = await pool.query("SHOW COLUMNS FROM pegawai LIKE 'photo'");
-      if (!rows || rows.length === 0) {
+      if (e.message.includes("doesn't exist")) {
         await pool.query("ALTER TABLE pegawai ADD COLUMN photo VARCHAR(255) DEFAULT NULL");
       }
-    } catch (e2) { console.warn('Could not ensure photo column:', e2.message); }
+    } catch (e2) { 
+      // Only warn if the error is not "Table doesn't exist", as that's handled by schema setup
+      if (!e2.message.includes("doesn't exist")) console.warn('Could not ensure photo column:', e2.message); 
+    }
   }
 }
 
@@ -128,12 +138,23 @@ app.post('/api/auth/register', async (req, res) => {
     const seed = req.query.token || req.headers['x-seed-token'];
     const expected = process.env.SEED_TOKEN || 'letmein';
     if (seed !== expected) return res.status(403).json({ error: 'Unauthorized' });
-    const { username, password, role } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'username and password required' });
+
+    const { username, password, role, name, email, unit } = req.body;
+    if (!username || !password || !name || !email || !unit) {
+      return res.status(400).json({ error: 'Semua field (username, password, name, email, unit) wajib diisi.' });
+    }
     const hash = await bcrypt.hash(password, 10);
-    await pool.query('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)', [username, hash, role || 'editor']);
+    const [result] = await pool.query('INSERT INTO users (username, email, name, password_hash, role, unit) VALUES (?, ?, ?, ?, ?, ?)', [username, email, name, hash, role || 'pegawai', unit]);
+    console.log(`✅ Pengguna baru berhasil didaftarkan: ${username} (ID: ${result.insertId})`);
     res.json({ ok: true });
   } catch (e) {
+    // Peningkatan: Memberikan pesan error yang lebih spesifik
+    console.error(`❌ Gagal mendaftarkan pengguna ${req.body.username}:`, e.message);
+    if (e.code === 'ER_DUP_ENTRY') {
+      if (e.message.includes('users.username_UNIQUE')) return res.status(409).json({ error: 'Username ini sudah terdaftar. Silakan gunakan username lain.' });
+      if (e.message.includes('users.email_UNIQUE')) return res.status(409).json({ error: 'Email ini sudah terdaftar. Silakan gunakan email lain.' });
+      return res.status(409).json({ error: 'Data duplikat terdeteksi.' });
+    }
     res.status(500).json({ error: e.message });
   }
 });
@@ -142,12 +163,12 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'username and password required' });
-    const [rows] = await pool.query('SELECT id, username, password_hash, role FROM users WHERE username = ?', [username]);
+    const [rows] = await pool.query('SELECT id, username, password_hash, role, name, unit FROM users WHERE username = ? OR email = ?', [username, username]);
     if (rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
     const user = rows[0];
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role, name: user.name, unit: user.unit }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     res.json({ ok: true, token });
   } catch (e) {
     res.status(500).json({ error: e.message });
