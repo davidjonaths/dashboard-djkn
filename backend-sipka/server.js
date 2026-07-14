@@ -16,16 +16,27 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'sipka_db',
+// Konfigurasi dasar untuk koneksi pool
+const poolConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
-});
+};
+
+// Cek apakah DATABASE_URL ada (untuk hosting seperti Railway)
+// Jika tidak, gunakan konfigurasi lokal dari .env
+const pool = process.env.DATABASE_URL
+  // Railway menyediakan DATABASE_URL, kita tambahkan parameter SSL
+  ? mysql.createPool(`${process.env.DATABASE_URL}?ssl={"rejectUnauthorized":true}`)
+  // Jika tidak ada DATABASE_URL (saat di lokal), gunakan konfigurasi dari .env
+  : mysql.createPool({
+      ...poolConfig,
+      ...process.env.DB_HOST && { host: process.env.DB_HOST },
+      ...process.env.DB_PORT && { port: Number(process.env.DB_PORT) },
+      ...process.env.DB_USER && { user: process.env.DB_USER },
+      ...process.env.DB_PASSWORD && { password: process.env.DB_PASSWORD },
+      ...process.env.DB_NAME && { database: process.env.DB_NAME },
+    });
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');

@@ -154,6 +154,9 @@ const THEME_STYLE = `
 }
 `;
 
+// ==================== [0] KONFIGURASI PENTING ====================
+const BACKEND_URL = 'https://nama-proyek-anda.up.railway.app'; // <-- GANTI DENGAN URL DARI RAILWAY
+
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard'); 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -308,7 +311,7 @@ export default function App() {
         const headers = {};
         const token = localStorage.getItem('djkn_token');
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const response = await fetch('/api/pegawai', { headers });
+        const response = await fetch(`${BACKEND_URL}/api/pegawai`, { headers });
         if (!response.ok) throw new Error(`Gagal mengambil data pegawai (Status: ${response.status})`);
         const data = await response.json();
         if (!isMounted) return;
@@ -430,7 +433,7 @@ export default function App() {
         // Development: backend expects a seed token by default 'letmein'.
         // You can change/X-SEED-TOKEN via env on server. For now use header.
         const seedToken = 'letmein';
-        const resp = await fetch('/api/auth/register', {
+        const resp = await fetch(`${BACKEND_URL}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-seed-token': seedToken },
           body: JSON.stringify({ 
@@ -459,7 +462,7 @@ export default function App() {
         setDatabaseUsers(prevUsers => [...prevUsers, newUserForDb]);
 
         // auto-login after register
-        const loginResp = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername.trim(), password: authPassword }) });
+        const loginResp = await fetch(`${BACKEND_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername.trim(), password: authPassword }) });
         if (!loginResp.ok) {
           const err = await loginResp.json().catch(() => ({}));
           throw new Error(err.error || 'Pendaftaran berhasil tetapi login otomatis gagal');
@@ -483,7 +486,7 @@ export default function App() {
     e.preventDefault();
     (async () => {
       try {
-        const resp = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername, password: authPassword }) });
+        const resp = await fetch(`${BACKEND_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername, password: authPassword }) });
         if (!resp.ok) {
           const err = await resp.json().catch(() => ({}));
           throw new Error(err.error || 'Login gagal');
@@ -2161,8 +2164,8 @@ const handleTambahTransaksi = (e) => {
                                         const file = e.target.files && e.target.files[0]; if (!file) return;
                                         const form = new FormData(); form.append('photo', file);
                                         const token = localStorage.getItem('djkn_token');
-                                        try {
-                                          const res = await fetch(`/api/pegawai/${p.id}/photo`, { method: 'POST', headers: token ? { 'Authorization': `Bearer ${token}` } : {}, body: form });
+                                        try { 
+                                          const res = await fetch(`${BACKEND_URL}/api/pegawai/${p.id}/photo`, { method: 'POST', headers: token ? { 'Authorization': `Bearer ${token}` } : {}, body: form });
                                           if (!res.ok) throw new Error('Upload gagal');
                                           const js = await res.json();
                                           // update local state to show image
