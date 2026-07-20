@@ -1715,32 +1715,42 @@ const handleTambahTransaksi = (e) => {
           {currentView === 'statistik' && (
              <div className="space-y-6 animate-fadeIn">
               
-              {/* UPLOAD PANEL */}
-              <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div>
-                    <h3 className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Import Data Excel Pegawai</h3>
-                    <p className={`text-[11px] mt-2 leading-relaxed max-w-2xl ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
-                      Cukup upload <span className="text-[#D4AF37] font-semibold">Data All.csv</span> Anda. Sistem otomatis melacak dan mengonversi kolom <span className="text-white font-medium">NIP, Nama, Jabatan, Unit/Bidang, Gender, Pendidikan, Generasi, Goldar,</span> dan <span className="text-white font-medium">Agama</span> menjadi statistik secara dinamis.
+              {/* PANEL KONTROL DATA - HANYA UNTUK ADMIN */}
+              {sessionUser?.role === 'admin' ? (
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                      <h3 className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Panel Kontrol Admin: Data Pegawai</h3>
+                      <p className={`text-[11px] mt-2 leading-relaxed max-w-2xl ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                        Sebagai Admin, Anda dapat mengimpor data pegawai dari file Excel/CSV. Sistem akan secara otomatis mengonversi data menjadi statistik yang interaktif.
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <label className={`btn-press inline-flex items-center justify-center gap-2 text-center bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 px-5 rounded-xl shadow-lg shadow-[#D4AF37]/20 text-xs uppercase tracking-wider ${isImportingStatistik ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`}>
+                        <input type="file" accept=".csv, .xlsx, .xls" onChange={handleImportStatistikExcel} className="hidden" disabled={isImportingStatistik} />
+                        {isImportingStatistik ? <Settings size={14} className="spinner-icon" /> : null}
+                        {isImportingStatistik ? 'Memproses...' : 'Import Excel / CSV'}
+                      </label>
+                      {statistikExcelFileName && (
+                        <button type="button" onClick={handleResetStatistikImport} className={`btn-press inline-flex items-center justify-center gap-2 text-center font-bold py-3 px-5 rounded-xl transition-colors border text-xs uppercase tracking-wider ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}>Reset Data</button>
+                      )}
+                    </div>
+                  </div>
+                  {statistikExcelFileName && (
+                    <p className={`text-[11px] mt-4 animate-fadeIn ${isDarkMode ? "text-emerald-300" : "text-slate-600"}`}>
+                      File aktif: <span className={isDarkMode ? "font-semibold text-white" : "font-semibold text-slate-900"}>{statistikExcelFileName}</span> · Visualisasi 100% menggunakan data yang diimpor.
                     </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <label className={`btn-press inline-flex items-center justify-center gap-2 text-center bg-gradient-to-r from-[#D4AF37] to-[#f3d05e] text-[#051622] font-black py-3 px-5 rounded-xl shadow-lg shadow-[#D4AF37]/20 text-xs uppercase tracking-wider ${isImportingStatistik ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`}>
-                      <input type="file" accept=".csv, .xlsx, .xls" onChange={handleImportStatistikExcel} className="hidden" disabled={isImportingStatistik} />
-                      {isImportingStatistik ? <Settings size={14} className="spinner-icon" /> : null}
-                      {isImportingStatistik ? 'Memproses...' : 'Import Excel / CSV'}
-                    </label>
-                    {statistikExcelFileName && (
-                      <button type="button" onClick={handleResetStatistikImport} className={`btn-press inline-flex items-center justify-center gap-2 text-center font-bold py-3 px-5 rounded-xl transition-colors border text-xs uppercase tracking-wider ${isDarkMode ? "bg-slate-800 hover:bg-slate-700 text-white border-slate-600" : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm"}`}>Reset Data</button>
-                    )}
-                  </div>
+                  )}
                 </div>
-                {statistikExcelFileName && (
-                  <p className={`text-[11px] mt-4 animate-fadeIn ${isDarkMode ? "text-emerald-300" : "text-slate-600"}`}>
-                    File aktif: <span className={isDarkMode ? "font-semibold text-white" : "font-semibold text-slate-900"}>{statistikExcelFileName}</span> · Visualisasi 100% menggunakan data yang diimpor.
+              ) : (
+                // Tampilan untuk Pegawai (hanya informasi)
+                <div className="bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-xl theme-panel-light">
+                  <h3 className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? "text-white" : "text-slate-900"}`}>Statistik Pegawai Kanwil DJKN Sumatera Utara</h3>
+                  <p className={`text-[11px] mt-2 leading-relaxed max-w-2xl ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
+                    Berikut adalah visualisasi data kepegawaian berdasarkan data terbaru yang diunggah oleh Administrator.
                   </p>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* 4 KARTU RINGKASAN SDM DENGAN DRILL-DOWN MODAL (DIPINDAH KE SINI) */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
