@@ -155,7 +155,7 @@ const THEME_STYLE = `
 `;
 
 // ==================== [0] KONFIGURASI PENTING ====================
-const BACKEND_URL = 'https://nama-proyek-anda.up.railway.app'; // <-- GANTI DENGAN URL DARI RAILWAY
+const BACKEND_URL = null; // <-- TIDAK LAGI DIGUNAKAN, SEMUA PROSES LOKAL
 
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard'); 
@@ -255,7 +255,10 @@ export default function App() {
   }, [showPegawaiModal, showUnitModal]);
 
   // DATA MASTER PEGAWAI (Dinamis dari Upload Excel)
-  const [daftarPegawai, setDaftarPegawai] = useState(() => generatePegawaiData());
+  const [daftarPegawai, setDaftarPegawai] = useState(() => {
+    const savedPegawai = localStorage.getItem('djkn_pegawai');
+    return savedPegawai ? JSON.parse(savedPegawai) : []; // Muat dari localStorage, jika tidak ada, mulai dengan array kosong
+  });
   const [statistikExcelFileName, setStatistikExcelFileName] = useState('');
 
   const [themeMode, setThemeMode] = useState(() => {
@@ -298,47 +301,6 @@ export default function App() {
     setToast({ show: true, type, message });
     setTimeout(() => setToast({ show: false, type: '', message: '' }), 4000);
   };
-
-  useEffect(() => {
-    let isMounted = true;
-    const loadPegawaiFromBackend = async () => {
-      // Jangan jalankan jika pengguna belum login
-      if (!isLoggedIn) {
-        setDaftarPegawai(generatePegawaiData());
-        return;
-      }
-      try {
-        const headers = {};
-        const token = localStorage.getItem('djkn_token');
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const response = await fetch(`${BACKEND_URL}/api/pegawai`, { headers });
-        if (!response.ok) throw new Error(`Gagal mengambil data pegawai (Status: ${response.status})`);
-        const data = await response.json();
-        if (!isMounted) return;
-
-        const normalized = Array.isArray(data)
-          ? data.map((item, index) => ({
-              ...item,
-              id: item.id ?? index + 1,
-              pendidikan: item.pendidikan || 'Tidak Diketahui',
-              generasi: item.generasi || 'Tidak Diketahui',
-              goldar: item.goldar || 'Tidak Diketahui',
-              agama: item.agama || 'Tidak Diketahui',
-              eselon: item.eselon || 'Tidak Diketahui'
-            }))
-          : [];
-
-        setDaftarPegawai(normalized.length > 0 ? normalized : generatePegawaiData());
-      } catch (error) {
-        if (!isMounted) return;
-        setDaftarPegawai(generatePegawaiData());
-        showToast('Tidak dapat terhubung ke backend MySQL. Menggunakan data contoh.', 'error');
-      }
-    };
-
-    loadPegawaiFromBackend();
-    return () => { isMounted = false; };
-  }, [isLoggedIn]); // <-- Tambahkan isLoggedIn sebagai dependensi
 
   // --- STATE INPUT FORM REGISTRASI ---
   const [authName, setAuthName] = useState('');
@@ -428,96 +390,50 @@ export default function App() {
     if (!isNameValid || !isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
       showToast('Formulir pendaftaran tidak valid. Harap penuhi semua ketentuan!', 'error'); return;
     }
-    (async () => {
-      try {
-        // Development: backend expects a seed token by default 'letmein'.
-        // You can change/X-SEED-TOKEN via env on server. For now use header.
-        const seedToken = 'letmein';
-        const resp = await fetch(`${BACKEND_URL}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-seed-token': seedToken },
-          body: JSON.stringify({ 
-            username: authUsername.trim(), 
-            password: authPassword, 
-            role: authRole,
-            name: authName.trim(),
-            email: authEmail.trim(),
-            unit: authUnit
-          })
-        });
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({}));
-          throw new Error(err.error || 'Gagal mendaftar');
-        }
+    // Logika baru: Simpan pengguna baru ke state (yang akan disimpan ke localStorage)
+    const newUser = {
+      username: authUsername.trim(),
+      password: authPassword,
+      email: authEmail.trim().toLowerCase(),
+      name: authName.trim(),
+      role: authRole,
+      unit: authUnit,
+    };
+    setDatabaseUsers(prevUsers => [...prevUsers, newUser]);
 
-        // SOLUSI: Tambahkan user baru ke state databaseUsers di frontend
-        const newUserForDb = {
-          username: authUsername.trim(),
-          password: authPassword, // Sebaiknya backend tidak mengembalikan password
-          email: authEmail.trim(),
-          name: authName.trim(),
-          role: authRole,
-          unit: authUnit
-        };
-        setDatabaseUsers(prevUsers => [...prevUsers, newUserForDb]);
-
-        // auto-login after register
-        const loginResp = await fetch(`${BACKEND_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername.trim(), password: authPassword }) });
-        if (!loginResp.ok) {
-          const err = await loginResp.json().catch(() => ({}));
-          throw new Error(err.error || 'Pendaftaran berhasil tetapi login otomatis gagal');
-        }
-        const json = await loginResp.json();
-        const token = json.token;
-        if (!token) throw new Error('Token tidak diterima dari server');
-        localStorage.setItem('djkn_token', token);
-        try { const payload = JSON.parse(atob(token.split('.')[1])); setSessionUser({ username: payload.username, role: payload.role, id: payload.id, name: authName.trim(), unit: authUnit }); } catch { setSessionUser({ username: authUsername.trim(), role: authRole, name: authName.trim(), unit: authUnit }); }
-        setIsLoggedIn(true); setShowAuthForm(false); setIsRegisterMode(false);
-        setAuthName(''); setAuthUsername(''); setAuthEmail(''); setAuthPassword(''); setAuthConfirmPassword('');
-        showToast('Akun berhasil dibuat dan login otomatis.', 'success');
-      } catch (e) {
-        console.error(e);
-        showToast(e.message || 'Gagal mendaftar', 'error');
-      }
-    })();
+    // Auto-login setelah registrasi
+    const sessionData = { username: newUser.username, name: newUser.name, role: newUser.role, unit: newUser.unit, password: newUser.password };
+    localStorage.setItem('djkn_session', JSON.stringify(sessionData));
+    setSessionUser(sessionData);
+    setIsLoggedIn(true);
+    setShowAuthForm(false);
+    setIsRegisterMode(false);
+    setAuthName(''); setAuthUsername(''); setAuthEmail(''); setAuthPassword(''); setAuthConfirmPassword('');
+    showToast('Akun berhasil dibuat dan login otomatis.', 'success');
   };
 
   const handleLogin = (e) => {
     e.preventDefault();
-    (async () => {
-      try {
-        const resp = await fetch(`${BACKEND_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: authUsername, password: authPassword }) });
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({}));
-          throw new Error(err.error || 'Login gagal');
-        }
-        const json = await resp.json();
-        const token = json.token;
-        if (!token) throw new Error('Token tidak diterima');
-        localStorage.setItem('djkn_token', token);
-        // decode token payload
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          // Gunakan data dari payload token sebagai sumber kebenaran
-          const user = { 
-            username: payload.username, 
-            role: payload.role, 
-            id: payload.id,
-            name: payload.name || authUsername, // Fallback ke username jika nama tidak ada di token
-            unit: payload.unit || 'Bagian Umum' // Fallback
-          };
-          setSessionUser(user);
-        } catch (e) { console.error("Gagal decode token:", e); setSessionUser({ username: authUsername }); }
-        setIsLoggedIn(true); setShowAuthForm(false); setCurrentView('dashboard');
-        setAuthUsername(''); setAuthPassword(''); showToast('Login berhasil.', 'success');
-      } catch (e) {
-        console.error(e);
-        showToast(e.message || 'Login gagal', 'error');
-      }
-    })();
+    // Logika baru: Cari pengguna di state `databaseUsers`
+    const user = databaseUsers.find(
+      u => (u.username.toLowerCase() === authUsername.toLowerCase() || u.email?.toLowerCase() === authUsername.toLowerCase()) && u.password === authPassword
+    );
+    if (user) {
+      const sessionData = { username: user.username, name: user.name, role: user.role, unit: user.unit, password: user.password };
+      localStorage.setItem('djkn_session', JSON.stringify(sessionData));
+      setSessionUser(sessionData);
+      setIsLoggedIn(true);
+      setShowAuthForm(false);
+      setCurrentView('dashboard');
+      setAuthUsername('');
+      setAuthPassword('');
+      showToast(`Login berhasil. Selamat datang, ${user.name}!`, 'success');
+    } else {
+      showToast('Username, Email, atau Password salah!', 'error');
+    }
   };
 
-  const handleLogout = () => { localStorage.removeItem('djkn_session'); localStorage.removeItem('djkn_token'); setIsLoggedIn(false); setSessionUser(null); setIsMobileMenuOpen(false); };
+  const handleLogout = () => { localStorage.removeItem('djkn_session'); setIsLoggedIn(false); setSessionUser(null); setIsMobileMenuOpen(false); };
   const navigateTo = (view) => { setCurrentView(view); setIsMobileMenuOpen(false); };
   const handleSaveProfile = (e) => {
     e.preventDefault(); setProfileSuccess('');
@@ -624,17 +540,6 @@ const handleTambahTransaksi = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setIsImportingStatistik(true);
-
-    const getEselonCat = (jabatan) => {
-      const j = String(jabatan).toLowerCase();
-      if (j.includes('kepala kantor wil')) return 'Eselon II';
-      if (j.includes('kepala bagian') || j.includes('kepala bidang')) return 'Eselon III / Setara';
-      if (j.includes('kepala subbagian') || j.includes('kepala seksi')) return 'Eselon IV / Setara';
-      if (j.includes('pelaksana')) return 'Pelaksana / Setara';
-      if (j.includes('fungsional') || j.includes('ahli') || j.includes('penilai') || j.includes('pranata')) return 'Fungsional';
-      return 'Lainnya';
-    };
-
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
@@ -642,11 +547,7 @@ const handleTambahTransaksi = (e) => {
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0]; 
         const ws = wb.Sheets[wsname];
-        
-        // Membaca sbg array 2D untuk mengatasi masalah judul/header yang tidak selalu di baris ke-1
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-        
-        // Mencari otomatis posisi baris Header (berisi 'Nama' dan 'NIP'/'Jabatan')
         let headerRowIndex = -1;
         for (let i = 0; i < Math.min(rows.length, 20); i++) {
            const rowStr = rows[i].map(c => String(c).toLowerCase()).join(' ');
@@ -664,7 +565,6 @@ const handleTambahTransaksi = (e) => {
         const headers = rows[headerRowIndex].map(h => String(h).trim().toLowerCase());
         const parsedData = [];
 
-        // Looping isi baris di bawah header
         for (let i = headerRowIndex + 1; i < rows.length; i++) {
            const row = rows[i];
            if (!row || !row.some(cell => cell !== '')) continue; // Skip baris kosong
@@ -684,15 +584,23 @@ const handleTambahTransaksi = (e) => {
            let jkRaw = getVal(['jenis kelamin', 'gender', 'jk', 'kelamin']);
            let jk = 'Laki-Laki';
            if (jkRaw.toLowerCase().startsWith('p') || jkRaw.toLowerCase() === 'female') jk = 'Perempuan';
-
            let rawJabatan = getVal(['jabatan', 'posisi']);
+            const getEselonCat = (jabatan) => {
+              const j = String(jabatan).toLowerCase();
+              if (j.includes('kepala kantor wil')) return 'Eselon II';
+              if (j.includes('kepala bagian') || j.includes('kepala bidang')) return 'Eselon III / Setara';
+              if (j.includes('kepala subbagian') || j.includes('kepala seksi')) return 'Eselon IV / Setara';
+              if (j.includes('pelaksana')) return 'Pelaksana / Setara';
+              if (j.includes('fungsional') || j.includes('ahli') || j.includes('penilai') || j.includes('pranata')) return 'Fungsional';
+              return 'Lainnya';
+            };
 
            parsedData.push({
                id: Date.now() + i,
                nip: getVal(['nip']),
                nama: nama,
-               jabatan: rawJabatan || 'Tidak Diketahui',
-               eselon: getVal(['golongan ruang/pangkat', 'pangkat', 'golongan']) ? getEselonCat(rawJabatan) : getEselonCat(rawJabatan),
+               jabatan: rawJabatan || 'Tidak Diketahui', // Tetap simpan jabatan asli
+               eselon: getEselonCat(rawJabatan), // Kategori eselon dari jabatan
                unit: getVal(['ue3', 'unit kerja', 'unit', 'bagian', 'bidang']) || 'Tidak Diketahui',
                jk: jk,
                pendidikan: getVal(['pendidikan terakhir', 'pendidikan', 'ijazah']) || 'Tidak Diketahui',
@@ -704,11 +612,8 @@ const handleTambahTransaksi = (e) => {
 
         setDaftarPegawai(parsedData);
         setStatistikExcelFileName(file.name);
-
-        // simpan untuk preview dan konfirmasi upload ke server
-        setParsedPreview(parsedData.slice(0, 500)); // preview up to 500 rows
-        setShowPreviewModal(true);
-        showToast(`File berhasil diparse. Tampilkan pratinjau sebelum mengirim ke server. (${parsedData.length} baris)`, 'success');
+        // Tidak perlu lagi preview modal dan kirim ke server
+        showToast(`Berhasil mengimpor dan menampilkan ${parsedData.length} data pegawai! Statistik & Daftar Pegawai telah diupdate otomatis.`, 'success');
       } catch (error) { 
         showToast('Gagal membaca file statistik. Pastikan file Excel valid dan tidak rusak.', 'error'); 
       } finally { 
@@ -723,31 +628,6 @@ const handleTambahTransaksi = (e) => {
     setDaftarPegawai(generatePegawaiData()); 
     setStatistikExcelFileName('');
     showToast('Data pegawai dikembalikan ke data contoh.', 'success');
-  };
-
-  const sendPreviewToServer = async () => {
-    if (!parsedPreview) return;
-    setIsUploadingPreview(true);
-    try {
-      // send full parsed data if available in memory; otherwise send preview only
-      const payload = parsedPreview.map(p => ({ nip: p.nip, nama: p.nama, eselon: p.eselon, unit: p.unit, jk: p.jk, pendidikan: p.pendidikan, generasi: p.generasi, goldar: p.goldar, agama: p.agama }));
-      const headers = { 'Content-Type': 'application/json' };
-      const token = localStorage.getItem('djkn_token');
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch('/api/pegawai/bulk', { method: 'POST', headers, body: JSON.stringify(payload) });
-      if (!resp.ok) throw new Error((await resp.json()).error || 'Gagal mengirim ke server');
-      const json = await resp.json();
-      setShowPreviewModal(false);
-      setParsedPreview(null);
-      const failed = Array.isArray(json.errors) ? json.errors.length : 0;
-      showToast(`Server memasukkan ${json.insertedRows || 0} baris. Gagal: ${failed} baris.`, 'success');
-      if (failed > 0) console.warn('Baris gagal:', json.errors);
-    } catch (err) {
-      console.error(err);
-      showToast('Gagal mengirim ke server. Cek koneksi atau backend.', 'error');
-    } finally {
-      setIsUploadingPreview(false);
-    }
   };
 
   // ===== Export / Template helpers =====
@@ -772,10 +652,6 @@ const handleTambahTransaksi = (e) => {
     const template = [{ nip: '1987123456', nama: 'Nama Lengkap', eselon: 'Eselon IV / Setara', unit: 'Bagian Umum', jk: 'Laki-Laki', pendidikan: 'S-1', generasi: 'Gen Y (1981-1996)', goldar: 'O', agama: 'Islam' }];
     downloadExcel(template, 'template_pegawai.xlsx');
   };
-
-  const discardPreview = () => { setShowPreviewModal(false); setParsedPreview(null); showToast('Pratinjau dibatalkan.', 'info'); };
-  
-  const scrollToSection = (id) => { setIsLandingMobileMenuOpen(false); const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth' }); };
 
   // --- ENGINE AGREGASI DINAMIS UNTUK GRAFIK ---
   const aggregateData = (data, key, valueKey = 'value', nameKey = 'name') => {
@@ -2154,26 +2030,7 @@ const handleTambahTransaksi = (e) => {
                                   <td className="p-3">{p.unit}</td>
                                   <td className="p-3">{p.pendidikan}</td>
                                   <td className="p-3">
-                                    {p.photo ? (
-                                      <img src={`/${p.photo}`} alt="foto" className="h-10 w-10 object-cover rounded-full" />
-                                    ) : (
-                                      <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-400">No</div>
-                                    )}
-                                    <div className="mt-2">
-                                      <input type="file" accept="image/*" onChange={async (e)=>{
-                                        const file = e.target.files && e.target.files[0]; if (!file) return;
-                                        const form = new FormData(); form.append('photo', file);
-                                        const token = localStorage.getItem('djkn_token');
-                                        try { 
-                                          const res = await fetch(`${BACKEND_URL}/api/pegawai/${p.id}/photo`, { method: 'POST', headers: token ? { 'Authorization': `Bearer ${token}` } : {}, body: form });
-                                          if (!res.ok) throw new Error('Upload gagal');
-                                          const js = await res.json();
-                                          // update local state to show image
-                                          setDaftarPegawai(prev => prev.map(item => item.id === p.id ? { ...item, photo: js.photo } : item));
-                                          showToast('Foto berhasil diunggah', 'success');
-                                        } catch (err) { console.error(err); showToast('Gagal mengunggah foto', 'error'); }
-                                      }} />
-                                    </div>
+                                    <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-400">N/A</div>
                                   </td>
                                 </tr>
                               ))}

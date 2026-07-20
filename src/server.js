@@ -9,10 +9,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-  credentials: true
-}));
+// --- [PENTING] Konfigurasi CORS yang Disederhanakan untuk Development ---
+// Ini akan mengizinkan permintaan dari alamat manapun.
+// Sangat berguna untuk mengatasi masalah CORS selama pengembangan.
+app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -31,11 +31,11 @@ const pool = process.env.DATABASE_URL
   // Jika tidak ada DATABASE_URL (saat di lokal), gunakan konfigurasi dari .env
   : mysql.createPool({
       ...poolConfig,
-      ...process.env.DB_HOST && { host: process.env.DB_HOST },
-      ...process.env.DB_PORT && { port: Number(process.env.DB_PORT) },
-      ...process.env.DB_USER && { user: process.env.DB_USER },
-      ...process.env.DB_PASSWORD && { password: process.env.DB_PASSWORD },
-      ...process.env.DB_NAME && { database: process.env.DB_NAME },
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT || 3306),
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || 'DaveJo05',
+      database: process.env.DB_NAME || 'sipka_db',
     });
 
 const bcrypt = require('bcryptjs');
