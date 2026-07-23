@@ -59,12 +59,6 @@ const generatePegawaiData = () => {
   return result;
 }
 
-const mockRealisasiUnitBulanan = [
-  { bulan: 'Jan', Realisasi: 2 }, { bulan: 'Feb', Realisasi: 3.5 }, { bulan: 'Mar', Realisasi: 5 },
-  { bulan: 'Apr', Realisasi: 4 }, { bulan: 'Mei', Realisasi: 6 }, { bulan: 'Jun', Realisasi: 8.5 },
-  { bulan: 'Jul', Realisasi: 7 }, { bulan: 'Ags', Realisasi: 9 }, { bulan: 'Sep', Realisasi: 11 },
-];
-
 const THEME_STYLE = `
 .theme-light { color: #0f172a; background: linear-gradient(135deg, #f8fafc 0%, #ffffff 54%, #eef4ff 100%) !important; }
 .theme-light .theme-text-primary, .theme-light .text-white, .theme-light .text-slate-900, .theme-light .text-slate-800 { color: #0f172a !important; }
@@ -237,6 +231,7 @@ export default function App() {
   // State untuk Drill-Down Modals
   const [showPegawaiModal, setShowPegawaiModal] = useState(false);
   const [showUnitModal, setShowUnitModal] = useState(false);
+  const [selectedUnitData, setSelectedUnitData] = useState(null);
   const [searchPegawai, setSearchPegawai] = useState('');
   const [searchTransaksi, setSearchTransaksi] = useState('');
   const [pegawaiPage, setPegawaiPage] = useState(1);
@@ -260,6 +255,9 @@ export default function App() {
     return savedPegawai ? JSON.parse(savedPegawai) : []; // Muat dari localStorage, jika tidak ada, mulai dengan array kosong
   });
   const [statistikExcelFileName, setStatistikExcelFileName] = useState('');
+  // State baru untuk Modal Profil Pegawai
+  const [showProfilModal, setShowProfilModal] = useState(false);
+  const [selectedPegawai, setSelectedPegawai] = useState(null);
 
   const [themeMode, setThemeMode] = useState(() => {
     const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('djkn_theme') : null;
@@ -628,6 +626,50 @@ const handleTambahTransaksi = (e) => {
     setDaftarPegawai(generatePegawaiData()); 
     setStatistikExcelFileName('');
     showToast('Data pegawai dikembalikan ke data contoh.', 'success');
+  };
+
+  // Fungsi untuk membuka modal profil pegawai
+  const handleBukaProfil = (pegawai) => {
+    if (!pegawai) return;
+    setSelectedPegawai(pegawai);
+    setShowProfilModal(true);
+  };
+
+  const handleBukaUnitDetail = (unitName) => {
+    if (!unitName) return;
+
+    // 1. Filter data pegawai dan transaksi untuk unit yang dipilih
+    const pegawaiDiUnit = daftarPegawai.filter(p => p.unit === unitName);
+    const transaksiDiUnit = transaksi.filter(t => t.bidang === unitName && t.tipe === 'keluar');
+
+    // 2. Kalkulasi total realisasi untuk unit tersebut
+    const totalRealisasiUnit = transaksiDiUnit.reduce((sum, t) => sum + t.jumlah, 0);
+
+    // 3. Kalkulasi persentase realisasi unit terhadap total realisasi
+    const totalRealisasiSemua = transaksi.reduce((sum, t) => t.tipe === 'keluar' ? sum + t.jumlah : sum, 0);
+    const persentase = totalRealisasiSemua > 0 ? (totalRealisasiUnit / totalRealisasiSemua) * 100 : 0;
+
+    // 4. Proses data untuk grafik tren bulanan unit tersebut
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+    const monthlyTotals = Array(12).fill(0);
+    transaksiDiUnit.forEach((t) => {
+      if (t.date) {
+        const monthIndex = parseInt(t.date.split('/')[1], 10) - 1;
+        if (monthIndex >= 0 && monthIndex < 12) monthlyTotals[monthIndex] += t.jumlah;
+      }
+    });
+    const trenBulanan = monthNames.map((m, index) => ({ bulan: m, Realisasi: Number((monthlyTotals[index] / 1000000).toFixed(2)) }));
+
+    // 5. Simpan semua data yang sudah diolah ke state dan tampilkan modal
+    setSelectedUnitData({
+      nama: unitName,
+      totalPegawai: pegawaiDiUnit.length,
+      totalRealisasi: totalRealisasiUnit,
+      totalTransaksi: transaksiDiUnit.length,
+      persentase: persentase.toFixed(2),
+      trenBulanan: trenBulanan,
+    });
+    setShowUnitModal(true);
   };
 
   // ===== Export / Template helpers =====
@@ -1769,17 +1811,14 @@ const handleTambahTransaksi = (e) => {
                   </div>
                 </div>
                 <div
-                  onClick={() => setShowUnitModal(true)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowUnitModal(true); } }}
-                  role="button" tabIndex={0} aria-haspopup="dialog"
-                  className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md cursor-pointer group theme-panel-light flex items-center gap-4"
+                  className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4"
                   style={{ animationDelay: '80ms' }}
                 >
                   <div className="bg-blue-500/20 p-3.5 rounded-xl text-blue-400 group-hover:scale-110 transition-transform"><LayoutGrid size={24} /></div>
                   <div className="flex-1">
                     <div className="text-2xl font-black text-blue-400">{dataStatistikUnitTampil.length}</div>
                     <div className={`text-[11px] font-bold ${isDarkMode ? "text-white" : "text-slate-800"}`}>Bidang / Unit</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5 flex items-center gap-0.5">Klik untuk detail <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" /></div>
+                    <div className="text-[9px] text-slate-400 mt-0.5">Total unit kerja aktif</div>
                   </div>
                 </div>
                 <div className="card-hover animate-riseIn bg-gradient-to-br from-[#17375f] via-[#1d4f86] to-[#132f55] backdrop-blur-md border border-slate-700/40 p-5 rounded-2xl shadow-md theme-panel-light flex items-center gap-4" style={{ animationDelay: '160ms' }}>
@@ -1811,7 +1850,7 @@ const handleTambahTransaksi = (e) => {
                         <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                         <YAxis dataKey="unit" type="category" stroke="#94a3b8" fontSize={11} width={100} tickLine={false} axisLine={false} />
                         <Tooltip cursor={{ fill: chartCursorFill }} contentStyle={chartTooltipStyle} />
-                        <Bar dataKey="jumlah" fill="#D4AF37" radius={[0, 4, 4, 0]} animationDuration={800} />
+                        <Bar dataKey="jumlah" fill="#D4AF37" radius={[0, 4, 4, 0]} animationDuration={800} onClick={(data) => handleBukaUnitDetail(data.unit)} style={{ cursor: 'pointer' }} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1982,6 +2021,60 @@ const handleTambahTransaksi = (e) => {
           </div>
         )}
 
+        {/* MODAL 3: DETAIL PROFIL PEGAWAI */}
+        {showProfilModal && selectedPegawai && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setShowProfilModal(false)}>
+            <div onClick={(e) => e.stopPropagation()} className={`w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
+               <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl ${isDarkMode ? 'bg-[#D4AF37]/10' : 'bg-blue-100'}`}>
+                      <User size={20} className={isDarkMode ? 'text-[#D4AF37]' : 'text-blue-600'} />
+                    </div>
+                    <div>
+                      <h3 className={`text-lg font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Profil Detail Pegawai</h3>
+                      <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{selectedPegawai.nama}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowProfilModal(false)} aria-label="Tutup" className="btn-press text-slate-400 hover:text-rose-500 hover:rotate-90 p-2 rounded-full hover:bg-rose-500/10"><X size={20}/></button>
+               </div>
+               <div className="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-4">
+                  <div className="flex flex-col sm:flex-row items-center gap-6">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#17375f] to-[#1d4f86] flex items-center justify-center text-[#D4AF37] font-black text-4xl shrink-0 border-4 border-slate-700">
+                      {selectedPegawai.nama.charAt(0)}
+                    </div>
+                    <div className="text-center sm:text-left">
+                      <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{selectedPegawai.nama}</h2>
+                      <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{selectedPegawai.jabatan}</p>
+                      <p className={`text-xs font-mono mt-1 ${isDarkMode ? 'text-[#D4AF37]' : 'text-blue-600'}`}>{selectedPegawai.nip}</p>
+                    </div>
+                  </div>
+                  <div className={`p-4 rounded-xl border ${isDarkMode ? 'bg-slate-800/30 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <h4 className={`text-xs font-bold mb-3 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>Informasi Detail</h4>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                      {[
+                        { label: 'Unit Kerja', value: selectedPegawai.unit },
+                        { label: 'Eselon', value: selectedPegawai.eselon },
+                        { label: 'Jenis Kelamin', value: selectedPegawai.jk },
+                        { label: 'Pendidikan', value: selectedPegawai.pendidikan },
+                        { label: 'Generasi', value: selectedPegawai.generasi },
+                        { label: 'Golongan Darah', value: selectedPegawai.goldar },
+                        { label: 'Agama', value: selectedPegawai.agama },
+                      ].map(item => (
+                        <React.Fragment key={item.label}>
+                          <div className={isDarkMode ? 'text-slate-400' : 'text-slate-500'}>{item.label}</div>
+                          <div className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{item.value || '-'}</div>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+               </div>
+               <div className="p-4 border-t border-slate-700/50 flex justify-end">
+                  <button onClick={() => setShowProfilModal(false)} className="btn-press px-6 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold">Tutup</button>
+               </div>
+            </div>
+          </div>
+        )}
+
         {/* MODAL 1: DAFTAR PEGAWAI DINAMIS */}
         {showPegawaiModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setShowPegawaiModal(false)}>
@@ -2084,9 +2177,9 @@ const handleTambahTransaksi = (e) => {
                       <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700/50 text-slate-300' : 'divide-slate-200 text-slate-600'}`}>
                         {filteredPegawai.map((p, index) => (
                           <tr key={p.id} className={`transition-colors ${isDarkMode ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50'}`}>
-                            <td className="p-3">{index + 1}</td>
+                            <td className="p-3 cursor-pointer hover:underline" onClick={() => handleBukaProfil(p)}>{index + 1}</td>
                             <td className="p-3 font-mono text-[11px] text-[#D4AF37]">{p.nip}</td>
-                            <td className="p-3 font-semibold">{p.nama}</td>
+                            <td className="p-3 font-semibold cursor-pointer hover:underline" onClick={() => handleBukaProfil(p)}>{p.nama}</td>
                             <td className="p-3"><span className="px-2 py-1 bg-slate-500/10 rounded-md">{p.jabatan}</span></td>
                             <td className="p-3">{p.unit}</td>
                             <td className="p-3">{p.pendidikan}</td>
@@ -2112,37 +2205,37 @@ const handleTambahTransaksi = (e) => {
         )}
 
         {/* MODAL 2: DETAIL UNIT KERJA */}
-        {showUnitModal && (
+        {showUnitModal && selectedUnitData && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => setShowUnitModal(false)}>
             <div onClick={(e) => e.stopPropagation()} className={`w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-popIn ${isDarkMode ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-200'}`}>
                <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
-                  <h3 className={`text-lg font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-slate-800'}`}>Detail Unit: Bidang PKN</h3>
+                  <h3 className={`text-lg font-black ${isDarkMode ? 'text-[#D4AF37]' : 'text-slate-800'}`}>Detail Unit: {selectedUnitData.nama}</h3>
                   <button onClick={() => setShowUnitModal(false)} aria-label="Tutup" className="btn-press text-slate-400 hover:text-rose-500 hover:rotate-90 p-2 rounded-full hover:bg-rose-500/10"><X size={20}/></button>
                </div>
                <div className="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                      <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Total Pegawai</span>
-                        <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>9</span>
+                        <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{selectedUnitData.totalPegawai}</span>
                      </div>
                      <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Realisasi</span>
-                        <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Rp 18.45 Miliar</span>
+                        <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Rp {(selectedUnitData.totalRealisasi / 1000000000).toFixed(2)} M</span>
                      </div>
                      <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Persentase</span>
-                        <span className="text-xl font-black text-emerald-500">68,45%</span>
+                        <span className="text-xl font-black text-emerald-500">{selectedUnitData.persentase}%</span>
                      </div>
                      <div className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center transition-transform hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                         <span className="text-[10px] text-slate-500 font-bold mb-1">Total Transaksi</span>
-                        <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>24</span>
+                        <span className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>{selectedUnitData.totalTransaksi}</span>
                      </div>
                   </div>
                   <div className={`p-5 rounded-xl border ${isDarkMode ? 'bg-slate-800/30 border-slate-700' : 'bg-white border-slate-200'}`}>
-                    <h4 className={`text-xs font-bold mb-4 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Grafik Realisasi Unit</h4>
+                    <h4 className={`text-xs font-bold mb-4 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Grafik Realisasi Unit (Jutaan Rp)</h4>
                     <div className="h-48 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={mockRealisasiUnitBulanan}>
+                        <BarChart data={selectedUnitData.trenBulanan}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                           <XAxis dataKey="bulan" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                           <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
